@@ -1,7 +1,7 @@
-#ifndef PUNTO_H
-#define PUNTO_H
+#ifndef POINT_H
+#define POINT_H
 
-class Punto {
+class Point {
 private:
     int horizontalAxis;
     int verticalAxis;
