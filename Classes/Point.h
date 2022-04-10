@@ -6,7 +6,12 @@ private:
     int horizontalAxis;
     int verticalAxis;
 public:
-    Punto(int pHorizontalAxis,int pVerticalAxis) {
+    Point() {
+        horizontalAxis = 0;
+        verticalAxis = 0;
+    }
+
+    Point(int pHorizontalAxis,int pVerticalAxis) {
         horizontalAxis = pHorizontalAxis;
         verticalAxis = pVerticalAxis;
     }
