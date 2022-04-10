@@ -6,9 +6,9 @@ private:
     int horizontalAxis;
     int verticalAxis;
 public:
-    Punto(int horizontalAxis,int verticalAxis) {
-        this->horizontalAxis = horizontalAxis;
-        this->verticalAxis = verticalAxis;
+    Punto(int pHorizontalAxis,int pVerticalAxis) {
+        horizontalAxis = pHorizontalAxis;
+        verticalAxis = pVerticalAxis;
     }
 
     int getHorizontalAxis() {
@@ -19,12 +19,12 @@ public:
         return verticalAxis;
     }
 
-    void setHorizontalAxis(int horizontalAxis) {
-        this->horizontalAxis = horizontalAxis;
+    void setHorizontalAxis(int pHorizontalAxis) {
+        horizontalAxis = pHorizontalAxis;
     }
 
-    void setVerticalAxis(int vertialAxis) {
-        this->verticalAxis = verticalAxis;
+    void setVerticalAxis(int pVerticalAxis) {
+        verticalAxis = pVerticalAxis;
     }
 
 };
