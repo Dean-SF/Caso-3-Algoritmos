@@ -4,6 +4,9 @@
 #include <sstream>
 #include <string>
 
+using std::stringstream;
+using std::string;
+
 class Resolution{
 private:
     int width;
