@@ -1,13 +1,32 @@
 #ifndef PUNTO_H
 #define PUNTO_H
 
-class Punto
-{
+class Punto {
 private:
-    /* data */
+    int horizontalAxis;
+    int verticalAxis;
 public:
-    Punto(/* args */);
-    ~Punto();
+    Punto(int horizontalAxis,int verticalAxis) {
+        this->horizontalAxis = horizontalAxis;
+        this->verticalAxis = verticalAxis;
+    }
+
+    int getHorizontalAxis() {
+        return horizontalAxis;
+    }
+
+    int getVerticalAxis() {
+        return verticalAxis;
+    }
+
+    void setHorizontalAxis(int horizontalAxis) {
+        this->horizontalAxis = horizontalAxis;
+    }
+
+    void setVerticalAxis(int vertialAxis) {
+        this->verticalAxis = verticalAxis;
+    }
+
 };
 
 
