@@ -1,3 +1,4 @@
 *.exe
 Newsvg.svg
 .vscode/
+*.o
