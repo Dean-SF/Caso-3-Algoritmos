@@ -2,58 +2,70 @@
 #define SELECTOR_H
 
 #include <string>
-#include <sstream>
 #include <vector>
+#include <sstream>
 #include "Point.h"
+#include <algorithm>
 #include "Resolution.h"
 #include "../libraries/pugixml/pugixml.hpp"
 
-using pugi::xml_document;
-using pugi::xml_parse_result;
-using pugi::xml_node_iterator;
-using pugi::xml_object_range;
-using pugi::xml_node;
+using std::find;
 using std::string;
 using std::vector;
+using pugi::xml_node;
 using std::to_string;
 using std::stringstream;
+using pugi::xml_document;
+using pugi::xml_object_range;
+using pugi::xml_parse_result;
+using pugi::xml_node_iterator;
 
-#include <iostream>
-using std::cout;
-using std::endl;
-
-
+/*
+Class used for the selecting process, creates a "SVG" Node with a "g" Node and a "mask" node.
+In the g node goes all the shapes from the original SVG with matching color. In the mask node goes
+a square in a given position. this svg node is copied by the amount of given points and changes the
+square in mask to the position of a point.
+*/
 class Selector {
 private:
+    int pointOffset;
     xml_document svgFile;
-    xml_document nodeCreator;
-    xml_parse_result svgLoadingResult;
-    Resolution svgResolution;
+    xml_node svgNodeGroup;
     vector<Point> pointList;
     vector<string> colorList;
-    xml_node svgNodeGroup;
-    int pointOffset;
+    xml_document nodeCreator;
+    Resolution svgResolution;
+    xml_parse_result svgLoadingResult;
 
+    /*
+    Calculates the pointOffset depending on the square size 
+    to put it on the center of a given point
+    */
     void calculatePointOffset(int pSquareSize) {
         pointOffset = pSquareSize/2;
     }
 
-    void shapeSelection() {
+    /*
+    Selects all the original SVG Shapes that the color matches with one
+    on the 'colorList'
+    */
+    void selectShapes() {
         xml_node_iterator iterator;
         xml_node mainSvgNode = svgFile.child("svg");
         xml_node newSvgG = svgNodeGroup.append_child("g");
         newSvgG.append_attribute("mask");
         for(iterator = mainSvgNode.begin(); iterator != mainSvgNode.end(); iterator++) {
             string colorCode = iterator->attribute("fill").value();
-            for(string color : colorList) {
-                if(color == colorCode) {
-                    newSvgG.append_copy(*iterator);
-                }
+            if(find(colorList.begin(),colorList.end(),colorCode) != colorList.end()) {
+                newSvgG.append_copy(*iterator);
             }
-            
         }
     }
 
+    /*
+    Creates a mask with a square, the sizes depends on the viewBox size of
+    the SVG. The square is white so that everything on it is
+    */
     void generateMask() {
         xml_node newMask = svgNodeGroup.append_child("mask");
         newMask.append_attribute("id");
@@ -70,13 +82,23 @@ private:
         calculatePointOffset(squareSize);
     }
 
+    /*
+    Generates all the data needed in the svg node created at the creation of the\
+    class, so it can be use to complete the selection process
+    */
     void generateSvgNodeGroup() {
         svgNodeGroup.append_attribute("x").set_value(0);
         svgNodeGroup.append_attribute("y").set_value(0);
         generateMask();
-        shapeSelection();
+        selectShapes();
     }
 
+    /*
+    Main algorithm for the selection process. Calls a function to create a svg node with a
+    mask and the shapes that corresponds with the given colors. Then the algorithm makes
+    copies of the svg node in the main document, with the square mask in the position of
+    each point given to the algorithm
+    */
     void selection() {
         svgResolution.setViewBoxResolution(svgFile.child("svg").attribute("viewBox").value());
         generateSvgNodeGroup();
@@ -107,22 +129,6 @@ public:
         pointOffset = 0;
     }
 
-    vector<string> getColorList() {
-        return colorList;
-    }
-
-    void setColorList(vector<string> pColorList) {
-        colorList = pColorList;
-    }
-
-    vector<Point> getPointList() {
-        return pointList;
-    }
-
-    void setPointList(vector<Point> pPointList) {
-        pointList = pPointList;
-    }
-
     xml_document *start() {
         if(!svgLoadingResult) {
             return nullptr;
@@ -131,10 +137,27 @@ public:
         return &svgFile;
     }
 
-    xml_node *svg() {
-        return &svgNodeGroup;
+    vector<string> getColorList() {
+        return colorList;
     }
 
+    vector<Point> getPointList() {
+        return pointList;
+    }
+
+    Resolution getResolution() {
+        return svgResolution;
+    }
+
+    void setColorList(vector<string> pColorList) {
+        colorList = pColorList;
+    }
+
+    void setPointList(vector<Point> pPointList) {
+        pointList = pPointList;
+    }
+
+    
 };
 
 #endif
