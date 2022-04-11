@@ -129,6 +129,7 @@ public:
         pointOffset = 0;
     }
 
+    // Starts the selection process
     xml_document *start() {
         if(!svgLoadingResult) {
             return nullptr;
