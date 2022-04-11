@@ -138,6 +138,7 @@ public:
         return &svgFile;
     }
 
+    // setters and getters:
     vector<string> getColorList() {
         return colorList;
     }
