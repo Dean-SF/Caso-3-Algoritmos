@@ -7,6 +7,7 @@
 #include "Point.h"
 #include <algorithm>
 #include "Resolution.h"
+#include <unordered_set>
 #include "../libraries/pugixml/pugixml.hpp"
 
 using std::find;
@@ -16,9 +17,11 @@ using pugi::xml_node;
 using std::to_string;
 using std::stringstream;
 using pugi::xml_document;
+using std::unordered_set;
 using pugi::xml_object_range;
 using pugi::xml_parse_result;
 using pugi::xml_node_iterator;
+
 
 /*
 Class used for the selecting process, creates a "SVG" Node with a "g" Node and a "mask" node.
@@ -28,13 +31,13 @@ square in mask to the position of a point.
 */
 class Selector {
 private:
-    int pointOffset;
+    int coordinateOffset;
     xml_document svgFile;
     xml_node svgNodeGroup;
-    vector<Point> pointList;
-    vector<string> colorList;
     xml_document nodeCreator;
     Resolution svgResolution;
+    vector<Point> coordinates;
+    unordered_set<string> colors;
     xml_parse_result svgLoadingResult;
 
     /*
@@ -42,7 +45,7 @@ private:
     to put it on the center of a given point
     */
     void calculatePointOffset(int pSquareSize) {
-        pointOffset = pSquareSize/2;
+        coordinateOffset = pSquareSize/2;
     }
 
     /*
@@ -56,7 +59,7 @@ private:
         newSvgG.append_attribute("mask");
         for(iterator = mainSvgNode.begin(); iterator != mainSvgNode.end(); iterator++) {
             string colorCode = iterator->attribute("fill").value();
-            if(find(colorList.begin(),colorList.end(),colorCode) != colorList.end()) {
+            if(colors.find(colorCode) != colors.end()) {
                 newSvgG.append_copy(*iterator);
             }
         }
@@ -102,7 +105,7 @@ private:
     void selection() {
         svgResolution.setViewBoxResolution(svgFile.child("svg").attribute("viewBox").value());
         generateSvgNodeGroup();
-        for(int pointPosition = 0; pointPosition < pointList.size(); pointPosition++) {
+        for(int pointPosition = 0; pointPosition < coordinates.size(); pointPosition++) {
             
             xml_node newSvgNodeGroup = svgFile.child("svg").append_copy(svgNodeGroup);
 
@@ -111,10 +114,10 @@ private:
             newMask.attribute("id").set_value(&maskId[0]);
             xml_node newSquareMask = newMask.child("rect");
 
-            Point currentPoint = pointList[pointPosition];
+            Point currentPoint = coordinates[pointPosition];
 
-            newSquareMask.attribute("x").set_value(currentPoint.getHorizontalAxis() - pointOffset);
-            newSquareMask.attribute("y").set_value(currentPoint.getVerticalAxis() - pointOffset);
+            newSquareMask.attribute("x").set_value(currentPoint.getHorizontalAxis() - coordinateOffset);
+            newSquareMask.attribute("y").set_value(currentPoint.getVerticalAxis() - coordinateOffset);
 
             xml_node newGSvg = newSvgNodeGroup.child("g");
             maskId = "url(#punto" + to_string(pointPosition) + string(")");
@@ -126,7 +129,7 @@ public:
     Selector(string pPath) {
         svgLoadingResult = svgFile.load_file(&pPath[0]);
         svgNodeGroup = nodeCreator.append_child("svg");
-        pointOffset = 0;
+        coordinateOffset = 0;
     }
 
     // Starts the selection process
@@ -139,24 +142,23 @@ public:
     }
 
     // setters and getters:
-    vector<string> getColorList() {
-        return colorList;
-    }
 
-    vector<Point> getPointList() {
-        return pointList;
+    vector<Point> getCoordinates() {
+        return coordinates;
     }
 
     Resolution getResolution() {
         return svgResolution;
     }
 
-    void setColorList(vector<string> pColorList) {
-        colorList = pColorList;
+    void setColors(vector<string> pColorList) {
+        for(string color : pColorList) {
+            colors.insert(color);
+        }
     }
 
-    void setPointList(vector<Point> pPointList) {
-        pointList = pPointList;
+    void setCoordinates(vector<Point> pCoordinates) {
+        coordinates = pCoordinates;
     }
 
     
