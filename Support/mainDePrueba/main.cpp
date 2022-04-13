@@ -33,13 +33,14 @@ int main() {
     colores.emplace_back("#2EB9FF");
     colores.emplace_back("#0097F4");
 
-    selector.setColorList(colores);
-    selector.setPointList(puntos);
+    selector.setColors(colores);
+    selector.setCoordinates(puntos);
 
     xml_document *doc = selector.start();
 
     if(doc == nullptr) {
         cout << "error" << endl;
+        return 0;
     }
     ofstream *copyFile = new ofstream("Newsvg.svg",ofstream::trunc);
     stringstream ss;
