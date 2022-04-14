@@ -22,6 +22,9 @@ using pugi::xml_object_range;
 using pugi::xml_parse_result;
 using pugi::xml_node_iterator;
 
+#include <iostream>
+using std::cout;
+using std::endl;
 
 /*
 Class used for the selecting process, creates a "SVG" Node with a "g" Node and a "mask" node.
@@ -33,7 +36,7 @@ class Selector {
 private:
     int coordinateOffset;
     xml_document svgFile;
-    xml_node svgNodeGroup;
+    //xml_node svgNodeGroup;
     xml_document nodeCreator;
     Resolution svgResolution;
     vector<Point> coordinates;
@@ -52,11 +55,11 @@ private:
     Selects all the original SVG Shapes that the color matches with one
     on the 'colorList'
     */
-    void selectShapes() {
+    void selectShapes(xml_node pSvgNodeGroup) {
         xml_node_iterator iterator;
         xml_node mainSvgNode = svgFile.child("svg");
-        xml_node newSvgG = svgNodeGroup.append_child("g");
-        newSvgG.append_attribute("mask");
+        xml_node newSvgG = pSvgNodeGroup.append_child("g");
+        newSvgG.append_attribute("mask").set_value("url(#punto");
         for(iterator = mainSvgNode.begin(); iterator != mainSvgNode.end(); iterator++) {
             string colorCode = iterator->attribute("fill").value();
             if(colors.find(colorCode) != colors.end()) {
@@ -69,9 +72,9 @@ private:
     Creates a mask with a square, the sizes depends on the viewBox size of
     the SVG. The square is white so that everything on it is
     */
-    void generateMask() {
-        xml_node newMask = svgNodeGroup.append_child("mask");
-        newMask.append_attribute("id");
+    void generateMask(xml_node pSvgNodeGroup) {
+        xml_node newMask = pSvgNodeGroup.append_child("mask");
+        newMask.append_attribute("id").set_value("punto");
 
         xml_node squareMask = newMask.append_child("rect");
 
@@ -89,11 +92,15 @@ private:
     Generates all the data needed in the svg node created at the creation of the\
     class, so it can be use to complete the selection process
     */
-    void generateSvgNodeGroup() {
+    xml_node generateSvgNodeGroup() {
+        xml_node svgNodeGroup = nodeCreator.append_child("svg");
+
         svgNodeGroup.append_attribute("x").set_value(0);
         svgNodeGroup.append_attribute("y").set_value(0);
-        generateMask();
-        selectShapes();
+        generateMask(svgNodeGroup);
+        selectShapes(svgNodeGroup);
+
+        return svgNodeGroup;
     }
 
     /*
@@ -102,33 +109,45 @@ private:
     copies of the svg node in the main document, with the square mask in the position of
     each point given to the algorithm
     */
-    void selection() {
-        svgResolution.setViewBoxResolution(svgFile.child("svg").attribute("viewBox").value());
-        generateSvgNodeGroup();
-        for(int pointPosition = 0; pointPosition < coordinates.size(); pointPosition++) {
-            
-            xml_node newSvgNodeGroup = svgFile.child("svg").append_copy(svgNodeGroup);
-
-            string maskId = "punto" + to_string(pointPosition);
-            xml_node newMask = newSvgNodeGroup.child("mask");
-            newMask.attribute("id").set_value(&maskId[0]);
-            xml_node newSquareMask = newMask.child("rect");
-
-            Point currentPoint = coordinates[pointPosition];
-
-            newSquareMask.attribute("x").set_value(currentPoint.getHorizontalAxis() - coordinateOffset);
-            newSquareMask.attribute("y").set_value(currentPoint.getVerticalAxis() - coordinateOffset);
-
-            xml_node newGSvg = newSvgNodeGroup.child("g");
-            maskId = "url(#punto" + to_string(pointPosition) + string(")");
-            newGSvg.attribute("mask").set_value(&maskId[0]);
+    void selectionAux(xml_node previousSvgNode, int pCoordsIndex) {
+        if(pCoordsIndex >= coordinates.size()) {
+            return;
         }
+        if(previousSvgNode.empty()) {
+            previousSvgNode = generateSvgNodeGroup();
+        }
+        xml_node newSvgNodeGroup = svgFile.child("svg").append_copy(previousSvgNode);
+        xml_node SvgNodeGroupMask = newSvgNodeGroup.child("mask");
+        string maskId = SvgNodeGroupMask.attribute("id").value();
+        maskId = maskId.substr(0,5) + to_string(pCoordsIndex);
+        SvgNodeGroupMask.attribute("id").set_value(&maskId[0]);
+        xml_node SquareMask = SvgNodeGroupMask.child("rect");
+
+        Point currentPoint = coordinates[pCoordsIndex];
+
+        SquareMask.attribute("x").set_value(currentPoint.getHorizontalAxis() - coordinateOffset);
+        SquareMask.attribute("y").set_value(currentPoint.getVerticalAxis() - coordinateOffset);
+
+        xml_node gNodeSvg = newSvgNodeGroup.child("g");
+        maskId = gNodeSvg.attribute("mask").value();
+        maskId = maskId.substr(0,10) + to_string(pCoordsIndex) + string(")");
+        gNodeSvg.attribute("mask").set_value(&maskId[0]);
+
+        pCoordsIndex++;
+
+        selectionAux(newSvgNodeGroup,pCoordsIndex);
+    }
+
+    void selection() {
+        xml_node previousSvgNode;
+        svgResolution.setViewBoxResolution(svgFile.child("svg").attribute("viewBox").value());
+        selectionAux(previousSvgNode, 0);
     }
 
 public:
     Selector(string pPath) {
         svgLoadingResult = svgFile.load_file(&pPath[0]);
-        svgNodeGroup = nodeCreator.append_child("svg");
+        //svgNodeGroup = nodeCreator.append_child("svg");
         coordinateOffset = 0;
     }
 
