@@ -2,10 +2,13 @@
 #define GENERATOR_H
 
 #include "ObserverPattern.h"
+#include "../../libraries/pugixml/pugixml.hpp"
+
 #include <iostream>
 
 using std::cout;
 using std::endl;
+using pugi::xml_document;
 
 class Generator : public Observer {
 private:
@@ -17,12 +20,12 @@ public:
     }
     ~Generator() {}
 
-    void work(void* pDocPointer) {
+    void work(xml_document* pDocPointer) {
         cout << "Working..." << endl;
         cout << "Animation complete" << endl;
     }
 
-    void update(void* pDocPointer) {
+    void update(xml_document* pDocPointer) {
         cout << "Generator started working" << endl;
         work(pDocPointer);
     }

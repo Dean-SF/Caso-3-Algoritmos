@@ -7,7 +7,7 @@ using namespace std;
 using namespace pugi;
 
 int main() {
-   
+
     xml_document doc;
     xml_parse_result result = doc.load_file("./svgcaso3.svg");
 
@@ -28,15 +28,12 @@ int main() {
         a.child("g").attribute("mask").set_value(&hola[0]);
     }
 
-    
-
     ofstream *copyFile = new ofstream("Newsvg.svg",fstream::trunc);
     stringstream ss;
     doc.save(ss," ");
     string stringXML = ss.str();
     *copyFile << stringXML;
     copyFile->close();
-    
-    delete copyFile;
 
+    delete copyFile;
 }

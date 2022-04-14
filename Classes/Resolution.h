@@ -7,7 +7,7 @@
 using std::stringstream;
 using std::string;
 
-class Resolution{
+class Resolution {
 private:
     int width;
     int height;

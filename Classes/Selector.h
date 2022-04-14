@@ -2,17 +2,23 @@
 #define SELECTOR_H
 
 #include "ObserverPattern.h"
+#include "../../libraries/pugixml/pugixml.hpp"
+
 #include <iostream>
 
 using std::cout;
 using std::endl;
+using namespace pugi;
 
-class Selector : public Subject {
+class Selector : public Subject, public Observer {
 private:
     Observer* animator;
+    int processId;
 
 public:
-    Selector() {}
+    Selector() {
+        processId = 0;
+    }
     ~Selector() {}
 
     void attach(Observer* pAnimator) {
@@ -20,17 +26,25 @@ public:
     }
 
     void detach(Observer* pAnimator) {
-        animator = nullptr;
+        delete animator;
     }
 
-    void work(void* pDocPointer) {
+    void work(xml_document* pDocPointer) {
         cout << "Selector is working..." << endl;
         notify(pDocPointer);
     }
 
-    void notify(void* pDocPointer) {
+    void notify(xml_document* pDocPointer) {
         cout << "Selector is done" << endl;
         animator->update(pDocPointer);
+    }
+
+    void update(xml_document* pDocPointer) {
+        work(pDocPointer);
+    }
+
+    int getProcessId() {
+        return processId;
     }
 };
 

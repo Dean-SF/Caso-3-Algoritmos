@@ -2,18 +2,23 @@
 #define ANIMATOR_H
 
 #include "ObserverPattern.h"
+#include "../../libraries/pugixml/pugixml.hpp"
+#include <iostream>
 #include <list>
 
+using std::cout;
+using std::endl;
 using std::list;
+using namespace pugi;
 
-class Animator : public Observer {
+class Animator : public Subject, public Observer {
 private:
     list<Observer*> observers;
     int stage;
 
 public:
     Animator() {
-        stage = 0;
+        stage = -1;
     }
     ~Animator() {}
 
@@ -25,14 +30,13 @@ public:
         observers.remove(pNewObserver);
     }
 
-    void update(void* pDocPointer) {
+    void notify(xml_document* pDocPointer) {
     /* a. Selector = 0 -> Router = 1
        b. Router = 1 -> Generator = 2
 
        a. Selector notified animator, so animator notifies router
        b. Router notified animator, so animator notifies generator */
         //list<Observer*> iterator observerIterator;
-
         stage++;
         for (Observer* observer : observers) {
             if (observer->getProcessId() == stage) {
@@ -42,9 +46,18 @@ public:
         }
     }
 
-    int getProcessId() {
-        return 0;
+    void startProcess(xml_document* pDocPointer) {
+        notify(pDocPointer);
     }
+
+    void update(xml_document* pDocPointer) {
+        notify(pDocPointer);
+    }
+
+    int getProcessId() {
+        return -1;
+    }
+
 };
 
 #endif // ANIMATOR_H

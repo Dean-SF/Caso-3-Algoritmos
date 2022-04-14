@@ -3,7 +3,7 @@
 #include <vector>
 #include <thread>
 
-#include "patronObserver2.h"
+#include "patronObserver.h"
 
 using namespace std;
 //class Profesor {
