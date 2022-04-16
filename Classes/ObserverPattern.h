@@ -1,7 +1,7 @@
 #ifndef OBSERVERPATTERN_H
 #define OBSERVERPATTERN_H
 
-#include "../../libraries/pugixml/pugixml.hpp"
+#include "../libraries/pugixml/pugixml.hpp"
 
 using pugi::xml_document;
 

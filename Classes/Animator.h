@@ -2,7 +2,6 @@
 #define ANIMATOR_H
 
 #include "ObserverPattern.h"
-#include "../../libraries/pugixml/pugixml.hpp"
 #include <iostream>
 #include <list>
 

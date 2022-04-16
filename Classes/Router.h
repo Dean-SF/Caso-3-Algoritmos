@@ -9,14 +9,15 @@
 #include <list>
 #include <vector>
 #include <cmath>
+#include "Resolution.h"
 #include "Point.h"
 #include "TypeOfRoute.h"
 #include "ObserverPattern.h"
-#include "../../libraries/pugixml/pugixml.hpp"
 
 using std::cout;
 using std::endl;
 using std::list;
+using std::stoi;
 using std::string;
 using std::vector;
 using namespace pugi;
@@ -26,36 +27,179 @@ class Router : public Subject, public Observer {
 private:
     Observer* animator;
     TypeOfRoute typeOfRoute;
+    xml_document* docPointer;
+    vector<Point*> distances;
     int processId;
-    float angle;
-    int width;
-    int height;
+
+    Resolution canvasSize;
+    double angle;
     int frames;
+    int quadrant;
+
+    // Debug only, remove for final release1
+    void printDistances() {
+        for(Point *actual : distances) {
+             cout << "(" << actual->getHorizontalAxis() << "," << actual->getVerticalAxis() << ")" << endl;
+        }
+    }
+
+    void calculateQuadrantNormalCase() {
+        double rightLimit, leftLimit, upperLimit, lowerLimit;
+        leftLimit = M_PI;                   // 180°
+        rightLimit = 2 * M_PI;              // 360° 
+        upperLimit = (3 * M_PI) / 2;        // 270°
+        lowerLimit = M_PI / 2;              // 90°
+
+        if (angle >= 0 && angle < lowerLimit) // 0° <= angle < 90°
+            quadrant = 1;  // (+,+) -> Is treated as (+,-)
+
+        else if (angle >= lowerLimit && angle < leftLimit) // 90° <= angle < 180°
+            quadrant = 2;  // (-,+) -> Is treated as (-,-)
+
+        else if (angle >= leftLimit && angle < upperLimit) // 180° <= angle < 270°
+            quadrant = 3;  // (-,-) -> Is treated as (-,+)
+
+        else if (angle >= upperLimit && angle < rightLimit) // 270° <= angle < 360°
+            quadrant = 4;   // (+,-) -> Is treated as (+,+)
+
+        // Dependiendo del cuadrante se va a obtener el ángulo adyacente al eje x ( Angulo Referencial :> )
+        switch (quadrant) {  
+            case 2:
+                angle = leftLimit - angle;
+                break;
+            case 3:
+                angle = angle - leftLimit;
+                break;
+            case 4:
+                angle = rightLimit - angle;
+                break;
+            default: 
+                break; 
+        }
+        if(angle == 0 || angle == (double)(M_PI/2))
+            calculateRouteForSpecialCase();
+        else
+            calculateRouteForNormalCase();
+    }
+
+    void calculateRouteForSpecialCase() {
+        cout << "Process for special case" << endl;
+        
+        cout << "Cuadrant = " << quadrant << endl;
+        cout << "Angle = " << angle << endl;
+        cout << "prueba" << endl;
+
+        xml_node mainSvgNode = docPointer->child("svg").last_child();
+        xml_node_iterator nodeIterator;
+
+        for(nodeIterator = mainSvgNode.begin(); nodeIterator != mainSvgNode.end(); nodeIterator++) {
+            int coordinate;
+
+            switch (quadrant) {
+                case 1: // initial angle = 0
+                    coordinate = stoi((*nodeIterator).child("mask").child("rect").attribute("x").value());
+                    distances.emplace_back(new Point((canvasSize.getWidth() - coordinate)/frames,0));
+                    break;
+                case 2: // initial angle = 90
+                    coordinate = stoi((*nodeIterator).child("mask").child("rect").attribute("y").value());
+                    distances.emplace_back(new Point(0,-(coordinate/frames)));
+                    break;
+                case 3: // initial angle = 180
+                    coordinate = stoi((*nodeIterator).child("mask").child("rect").attribute("x").value());
+                    distances.emplace_back(new Point(-(coordinate/frames),0));
+                    break;
+                case 4: // initial angle = 270
+                    coordinate = stoi((*nodeIterator).child("mask").child("rect").attribute("y").value());
+                    distances.emplace_back(new Point(0,(canvasSize.getHeight() - coordinate)/frames));
+                    break;
+                default: 
+                    break;
+            }
+        }
+        
+        
+        notify(docPointer);
+    }
+
+    void calculateRouteForNormalCase() {        
+        
+        cout << "--- CASO NORMAL ---" << endl;
+        cout << "Frames = " << frames << endl;
+        cout << "Cuadrant = " << quadrant << endl;
+        cout << "Angle = " << angle << endl;
+        
+        int xAxis,yAxis;
+        int invertSign = 1;
+        double firstLeg,secondLeg,slope,linearConstant;; // leg -> cateto
+
+        
+
+        xml_node node;
+        xml_node mainSvgNode = docPointer->child("svg").last_child();
+
+        xml_node_iterator nodeIteratorParent; ;
+        
+        for(nodeIteratorParent = mainSvgNode.begin(); nodeIteratorParent != mainSvgNode.end(); nodeIteratorParent++) {
+            node = *nodeIteratorParent;
+            xAxis = stoi(node.child("mask").child("rect").attribute("x").value());;
+            yAxis = stoi(node.child("mask").child("rect").attribute("y").value());;
+
+            if(quadrant == 1 || quadrant == 4) {
+                firstLeg = canvasSize.getWidth() - xAxis;
+                secondLeg = tan(angle)*firstLeg;
+            } else {
+                firstLeg = xAxis;
+                secondLeg = tan(angle)*firstLeg;
+            }
+
+            if((secondLeg > yAxis && (quadrant == 1 || quadrant == 2)) || 
+               (secondLeg > canvasSize.getHeight() && (quadrant == 3 || quadrant == 4))) {
+                slope = (secondLeg)/(firstLeg);
+                linearConstant = yAxis-(slope*xAxis);
+                if(quadrant == 1 || quadrant == 2) {
+                    secondLeg = yAxis;
+                    firstLeg = ((((yAxis*2)-linearConstant)/slope) - xAxis);
+                } else {
+                    secondLeg = canvasSize.getHeight() - yAxis;
+                    firstLeg = (((canvasSize.getHeight()-linearConstant)/slope) - xAxis);
+                }
+            }
+
+            if(quadrant == 2 || quadrant == 3)
+                firstLeg *= -1;
+            if(quadrant == 1 || quadrant == 2)
+                secondLeg *=-1;
+
+            distances.emplace_back(new Point(firstLeg/frames,secondLeg/frames));
+        }
+        printDistances(); // remove letter in final release
+        notify(docPointer);
+    }
 
 public:
-    Router(float pAngle, int pFrames, TypeOfRoute pTypeOfRoute, xml_document* pDocPointer) {
+    Router(double pAngle, int pFrames, TypeOfRoute pTypeOfRoute, xml_document* pDocPointer) {
         animator = nullptr;
         processId = 1;
         angle = pAngle;
         frames = pFrames;
         typeOfRoute = pTypeOfRoute;
-        calculateWidthAndHeight(pDocPointer);
+        canvasSize.setViewBoxResolution(pDocPointer->child("svg").attribute("viewBox").value(),true);
     }
     ~Router() {} 
 
     int getWidth() {
-        return width;
+        return canvasSize.getWidth();
     }
 
     int getHeight() {
-        return height;
+        return canvasSize.getHeight();
     }
 
     int getFrames() {
         return frames;
     }
 
-    float getAngle() {
+    double getAngle() {
         return angle;
     }
 
@@ -64,14 +208,14 @@ public:
     }
 
     void setWidth(int pWidth) {
-        width = pWidth;
+        canvasSize.setWidth(pWidth);
     }
 
     void setHeight(int pHeight) {
-        height = pHeight;
+        canvasSize.setHeight(pHeight);
     }
 
-    void setAngle(float pAngle) {
+    void setAngle(double pAngle) {
         angle = pAngle;
     }
 
@@ -111,120 +255,9 @@ public:
     void update(xml_document* pDocPointer) {
         cout << "--------------------------" << endl;
         cout << "Router started working" << endl;
-        verifySpecialCase(angle, pDocPointer);
-    }
+        docPointer = pDocPointer;
+        calculateQuadrantNormalCase();
 
-    void calculateWidthAndHeight(xml_document* pDocPointer) {
-        string strViewbox = pDocPointer->child("svg").attribute("viewBox").value();
-        stringstream stringManipulator(strViewbox);
-        string extractedString;
-
-        stringManipulator >> extractedString; // min-x
-        stringManipulator >> extractedString; // min-y
-
-        stringManipulator >> extractedString;
-        int widthResult = stoi(extractedString);
-        stringManipulator >> extractedString;
-        int heightResult = stoi(extractedString);
-
-        width = widthResult;
-        height = heightResult;
-    }
-
-    void verifySpecialCase(float pAngle, xml_document* pDocPointer) {
-        bool isSpecial = false;
-        int quadrant;
-    
-        if (pAngle == 0) {
-            quadrant = 1;
-            isSpecial = true;
-        } else if (pAngle == (float)(M_PI)) {
-            angle = 0;
-            quadrant = 2;
-            isSpecial = true;
-        } else if (pAngle == (float)(3*M_PI/2)) {
-            angle = pAngle - M_PI;
-            quadrant = 4;
-            isSpecial = true;
-        } else if (pAngle == (float)(M_PI/2)) {
-            quadrant = 1;
-            isSpecial = true;
-        }
-    
-        if (isSpecial)
-            calculateRouteForSpecialCase(quadrant, pDocPointer);
-        else
-            calculateQuadrantNormalCase(angle, pDocPointer);
-    }
-
-    int calculateQuadrantNormalCase(float pAngle, xml_document* pDocPointer) {
-        float rightLimit, leftLimit, upperLimit, lowerLimit;
-        leftLimit = M_PI;                   // 180°
-        rightLimit = 2 * M_PI;              // 360° 
-        upperLimit = (3 * M_PI) / 2;        // 270°
-        lowerLimit = M_PI / 2;              // 90°
-        int quadrant;
-
-        if (pAngle > 0 && pAngle < lowerLimit) // 0° < pAngle < 90°
-            quadrant = 1;  // (+,+) -> Is treated as (+,-)
-
-        else if (pAngle > lowerLimit && pAngle < leftLimit) // 90° < pAngle < 180°
-            quadrant = 2;  // (-,+) -> Is treated as (-,-)
-
-        else if (pAngle > leftLimit && pAngle < upperLimit) // 180° < pAngle < 270°
-            quadrant = 3;  // (-,-) -> Is treated as (-,+)
-
-        else if (pAngle > upperLimit && pAngle < rightLimit) // 270° < pAngle < 360°
-            quadrant = 4;   // (+,-) -> Is treated as (+,+)
-
-        // Dependiendo del cuadrante se va a obtener el ángulo adyacente al eje x
-        switch (quadrant) {  
-            case 3:
-                angle = leftLimit - pAngle;
-                break;
-            case 2:
-                angle = pAngle - leftLimit;
-                break;
-            case 1:
-                angle = rightLimit - pAngle;
-                break;
-            default: 
-                break; 
-        }
-        calculateRouteForNormalCase(quadrant, pDocPointer);
-    }
-
-    void calculateRouteForSpecialCase(int quadrant, xml_document* pDocPointer) {
-        cout << "Process for special case" << endl;
-        // to do
-        notify(pDocPointer);
-    }
-
-    void calculateRouteForNormalCase(int quadrant, xml_document* pDocPointer) {        
-        vector<int> distances;
-
-        cout << "Cuadrant = " << quadrant << endl;
-        cout << "Angle = " << angle << endl;
-
-        int xAxis, yAxis;
-        string strXAxis, strYAxis;
-        xml_node node;
-        auto nodeIteratorParent = pDocPointer->child("svg").begin();
-        
-        for(; nodeIteratorParent != pDocPointer->child("svg").end(); nodeIteratorParent++) {
-            if (string(nodeIteratorParent->name()) == "svg") {
-                node = *nodeIteratorParent;
-                strXAxis = node.child("mask").child("rect").attribute("x").value();
-                strYAxis = node.child("mask").child("rect").attribute("y").value();
-
-                xAxis = stoi(strXAxis);
-                yAxis = stoi(strYAxis);
-
-                cout << "(" << strXAxis << "," << strYAxis << ")" << endl;
-            }
-        }
-
-        notify(pDocPointer);
     }
 
 };

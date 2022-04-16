@@ -1,7 +1,7 @@
 #include <iostream>
 #include <list>
 
-#include "patronObserver.h"
+#include "observerPattern.h"
 
 using namespace std;
 

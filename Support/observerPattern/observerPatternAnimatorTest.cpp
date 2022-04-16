@@ -21,8 +21,14 @@ int main() {
 
     Selector* selection = new Selector();
 
-    float angle = M_PI / 3;   //60° Grados 
-    Router* routing = new Router(angle, 4, TypeOfRoute::straightRoute, docPointer);
+    int angleGrad = 350;        // 60 -> 120 -> 240 -> 300
+
+    double angle = M_PI / 3;   //60° Grados
+
+    double angleTransformed = angleGrad *(M_PI/180);
+    
+
+    Router* routing = new Router(angleTransformed, 4, TypeOfRoute::straightRoute, docPointer);
 
     Generator* generation = new Generator();
     Animator* animator = new Animator();
