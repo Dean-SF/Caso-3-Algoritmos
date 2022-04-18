@@ -19,14 +19,14 @@ public:
     }
     ~Generator() {}
 
-    void work(xml_document* pDocPointer) {
+    void work(void* pDocPointer, void* pCoordinates) {
         cout << "Working..." << endl;
         cout << "Animation complete" << endl;
     }
 
-    void update(xml_document* pDocPointer) {
+    void update(void* pDocPointer, void* pCoordinates) {
         cout << "Generator started working" << endl;
-        work(pDocPointer);
+        work(pDocPointer, pCoordinates);
     }
 
     int getProcessId() {

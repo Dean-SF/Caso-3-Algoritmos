@@ -140,7 +140,7 @@ private:
             }
         }
         printDistances(); // for debugging
-        notify(docPointer);
+        notify(docPointer, &distances);
     }
 
 
@@ -232,7 +232,7 @@ private:
             distances.emplace_back(new Point(firstLeg/frames,secondLeg/frames));
         }
         printDistances(); // remove letter in final release
-        notify(docPointer);
+        notify(docPointer, &distances);
     }
 
 public:
@@ -305,16 +305,18 @@ public:
     }
 
     // Notify the animator that Router finished it's job 
-    void notify(xml_document* pDocPointer) {
+    void notify(void* pDocPointer, void* pCoordinates) {
         cout << "Router is done" << endl;
         cout << "--------------------------" << endl;
-        animator->update(pDocPointer);
+
+        animator->update(pDocPointer, pCoordinates);
     }
 
-    void update(xml_document* pDocPointer) {
+    void update(void* pDocPointer, void* pCoordinates) {
         cout << "--------------------------" << endl;
         cout << "Router started working" << endl;
-        docPointer = pDocPointer;
+
+        docPointer = (xml_document*)pDocPointer;
         calculateQuadrantNormalCase();
 
     }

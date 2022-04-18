@@ -4,6 +4,7 @@
 #include "ObserverPattern.h"
 #include <iostream>
 #include <list>
+#include <vector>
 
 using std::cout;
 using std::endl;
@@ -29,28 +30,30 @@ public:
         observers.remove(pNewObserver);
     }
 
-    void notify(xml_document* pDocPointer) {
-    /* a. Selector = 0 -> Router = 1
-       b. Router = 1 -> Generator = 2
+    void notify(void* pDocPointer, void* pCoordinates) {
+    /* 
+       a. start process = -1
+       b. Selector = 0 -> Router = 1
+       c. Router = 1 -> Generator = 2
 
-       a. Selector notified animator, so animator notifies router
-       b. Router notified animator, so animator notifies generator */
-        //list<Observer*> iterator observerIterator;
+       b. Selector notified animator, so animator notifies router
+       c. Router notified animator, so animator notifies generator */
+    
         stage++;
         for (Observer* observer : observers) {
             if (observer->getProcessId() == stage) {
-                observer->update(pDocPointer);
+                observer->update(pDocPointer, pCoordinates);
                 break;
             }
         }
     }
 
-    void startProcess(xml_document* pDocPointer) {
-        notify(pDocPointer);
+    void startProcess(void* pDocPointer, void* pCoordinates) {
+        notify(pDocPointer, pCoordinates);
     }
 
-    void update(xml_document* pDocPointer) {
-        notify(pDocPointer);
+    void update(void* pDocPointer, void* pCoordinates) {
+        notify(pDocPointer, pCoordinates);
     }
 
     int getProcessId() {

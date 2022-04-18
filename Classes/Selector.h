@@ -28,18 +28,18 @@ public:
         delete animator;
     }
 
-    void work(xml_document* pDocPointer) {
+    void work(void* pDocPointer, void* pCoordinates) {  
         cout << "Selector is working..." << endl;
-        notify(pDocPointer);
+        notify(pDocPointer, pCoordinates);
     }
 
-    void notify(xml_document* pDocPointer) {
+    void notify(void* pDocPointer, void* pCoordinates) {
         cout << "Selector is done" << endl;
-        animator->update(pDocPointer);
+        animator->update(pDocPointer, pCoordinates);
     }
 
-    void update(xml_document* pDocPointer) {
-        work(pDocPointer);
+    void update(void* pDocPointer, void* pCoordinates) {
+        work(pDocPointer, pCoordinates);
     }
 
     int getProcessId() {

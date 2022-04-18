@@ -40,7 +40,7 @@ int main() {
     animator->attach(routing);       // routing observa a animator
     animator->attach(generation);    // generation observa a animator
 
-    animator->startProcess(docPointer);
+    animator->startProcess(docPointer, nullptr);
 
     return 0;
 }
