@@ -30,7 +30,7 @@ public:
         observers.remove(pNewObserver);
     }
 
-    void notify(void* pDocPointer, void* pCoordinates) {
+    void notify(xml_document* pDocPointer, void* pCoordinates) {
     /* 
        a. start process = -1
        b. Selector = 0 -> Router = 1
@@ -48,11 +48,7 @@ public:
         }
     }
 
-    void startProcess(void* pDocPointer, void* pCoordinates) {
-        notify(pDocPointer, pCoordinates);
-    }
-
-    void update(void* pDocPointer, void* pCoordinates) {
+    void update(xml_document* pDocPointer, void* pCoordinates) {
         notify(pDocPointer, pCoordinates);
     }
 

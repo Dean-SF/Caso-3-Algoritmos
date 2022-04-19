@@ -28,28 +28,18 @@ private:
     Observer* animator;
     TypeOfRoute typeOfRoute;
     xml_document* docPointer;
-    vector<Point*> distances; // resulting vector as a attribute
+    vector<Point*> distances; 
     int processId;
     
-    Resolution canvasSize; // width and height as a Resolution object
+    Resolution canvasSize; 
     double angle;
     int frames;
-    int quadrant; // Quadrant as atribute
+    int quadrant; 
 
-    /*
-    Resumen:
-    verifySpecialCase() -> elimitado, en cambio primera etapa es en calculateQuadrantNormalCase(), donde
-    se va a transformar el caso especial en un angulo de 0 o 90, y se le asigna un quadrante para identificar
-    si se mueve hacia arriba, abajo, izquierda o derecha. En caso de ser un caso especial ( que ahora es reducido
-    a un angulo de 0 o 90), se ejecuta calculateRouteForSpecialCase(), si no calculateRouteForNormalCase(). ambas
-    funciones se completaron y estan explicadas en la debida funcion.
-    Ademas se redujeron los parametros en funciones y se cambiaron a atributos de la clase para que puedan ser
-    accedidos de cualquier lado
-    */
 
     // Debug only, remove for final release just to print the resulting vector
     void printDistances() {
-        for(Point *actual : distances) {
+        for (Point *actual : distances) {
              cout << "(" << actual->getHorizontalAxis() << "," << actual->getVerticalAxis() << ")" << endl;
         }
     }
@@ -88,7 +78,7 @@ private:
             default: 
                 break; 
         }
-        if(angle == 0 || angle == (double)(M_PI/2))
+        if (angle == 0 || angle == (double)(M_PI/2))
             calculateRouteForSpecialCase();
         else
             calculateRouteForNormalCase();
@@ -102,19 +92,8 @@ private:
         cout << "Cuadrant = " << quadrant << endl;
         cout << "Angle = " << angle << endl;
 
-        // Empieza la funcion
-
-        /*
-        CAMBIO DE PLANTILLA: Se puso un nodo SVG al final del nodo SVG principal, entonces 
-        puede ser accedido al instante y todo lo que esta dentro de ese nodo va ser un nodo SVG con mask 
-        y coordenadas para evitar comparar strings, lo que es muy lento
-        */
-
-        // mainSvgNode contiene el nodo con todos los nodos que traen los datos que se necesitan
         xml_node mainSvgNode = docPointer->child("svg").last_child(); 
-
-
-        xml_node_iterator nodeIterator; // recorrido por los nodos para obtener coordenadas y calcular direcciones
+        xml_node_iterator nodeIterator; 
         for(nodeIterator = mainSvgNode.begin(); nodeIterator != mainSvgNode.end(); nodeIterator++) {
             int coordinate;
 
@@ -143,8 +122,6 @@ private:
         notify(docPointer, &distances);
     }
 
-
-
     void calculateRouteForNormalCase() {        
         
         cout << "--- CASO NORMAL ---" << endl;
@@ -154,33 +131,17 @@ private:
         
         int xAxis,yAxis; 
         
-        // leg significa cateto, por lo tanto las primeras variables son "primer cateto y segundo cateto"
-        // slope va ser la pendiente(m) y linearConstant la b en la funcion (lineal) y = mx + b 
-        double firstLeg,secondLeg,slope,linearConstant;; // leg -> cateto
+        double firstLeg,secondLeg,slope,linearConstant; // leg -> cateto
 
         xml_node node;
-
-        // Esta parte y los parametro del for son iguales a la anterior
         xml_node mainSvgNode = docPointer->child("svg").last_child();
-        xml_node_iterator nodeIteratorParent; ;
+        xml_node_iterator nodeIteratorParent;
         for(nodeIteratorParent = mainSvgNode.begin(); nodeIteratorParent != mainSvgNode.end(); nodeIteratorParent++) {
-
-            // Extraccion de coordenadas fue cambiado, originalmente necesitaba de dos variables extras
             node = *nodeIteratorParent;
             xAxis = stoi(node.child("mask").child("rect").attribute("x").value());
             yAxis = stoi(node.child("mask").child("rect").attribute("y").value());
-
-            /*
-            Para el primer y cuarto cuadrante siempre se usa la misma distancia en el eje X para el primer
-            cateto puesto que estan reflejados en dicho eje
-            */
-
-            /*
-            Para el segundo y tercer cuadrante (parte del "else") siempre se usa la misma distancia del eje x
-            la cual es el valor del xAxis
-            */
         
-            if(quadrant == 1 || quadrant == 4) {
+            if (quadrant == 1 || quadrant == 4) {
                 firstLeg = canvasSize.getWidth() - xAxis;
                 secondLeg = tan(angle)*firstLeg;
             } else {
@@ -188,28 +149,7 @@ private:
                 secondLeg = tan(angle)*firstLeg;
             }
 
-            /*
-            Para los cuadrantes 1 y 2 si el triangulo cuadrado se sale de los limites se verifica
-            si la distancia del segundo cateto (opuesto) es mayor a la del valor de yAxis del punto actual
-
-            Para los cuadrantes 3 y 4 si el triangulo cuadrado se sale de los limites se verifica que 
-            la coordenada 'y' del punto de llegada no sobrepase el limite del canvas
-
-            En cualquier caso si se supera el limite, se calcula la pendiente y la 'b' de la funcion
-            lineal para usar la funcion inversa y obtener una coordenada en el eje X que choque con
-            el limite del canvas, una vez se hace eso:
-
-            Para cuadrante 1 y 2 el segundo cateto (opuesto) va ser del tamaño del yAxis, y
-            el primer cateto (adyacente) va ser la distancia entre la coordenada del eje x encontrada
-            con la funcion inversa y xAxis que era el punto inicial
-
-            Para cuadrante 3 y 4 al pasarse el limite significa que la distancia del segundo cateto
-            (opuesto) es la distancia entre el final del canvas y el yAxis del punto actual, mientras
-            que el primer cateto (adyacente) es la distancia entre la coordenada del eje x encontrada
-            con la funcion inversa, pero esta vez se usa el valor maximo de altura del canvas, y 
-            el xAxis del punto inicial
-            */
-            if((secondLeg > yAxis && (quadrant == 1 || quadrant == 2)) || 
+            if ((secondLeg > yAxis && (quadrant == 1 || quadrant == 2)) || 
                (secondLeg + yAxis > canvasSize.getHeight() && (quadrant == 3 || quadrant == 4))) {
                 slope = (secondLeg)/(firstLeg);     
                 linearConstant = yAxis-(slope*xAxis);
@@ -222,8 +162,6 @@ private:
                 }
             }
             
-
-            // Esto es para acomodar los signo de los valores, segun el cuadrante
             if(quadrant == 2 || quadrant == 3)
                 firstLeg *= -1;
             if(quadrant == 1 || quadrant == 2)
@@ -242,6 +180,7 @@ public:
         angle = pAngle;
         frames = pFrames;
         typeOfRoute = pTypeOfRoute;
+        docPointer = pDocPointer;
         canvasSize.setViewBoxResolution(pDocPointer->child("svg").attribute("viewBox").value(),true); // set canvas size;
     }
     ~Router() {} 
@@ -290,6 +229,14 @@ public:
         processId = pProcessId;
     }
 
+    xml_document* getDocPointer() {
+        return docPointer;
+    }
+
+    void setDocPointer(xml_document* pDocPointer) {
+        docPointer = pDocPointer;
+    }
+
     // Assign given pointer to an observer as the class' animator
     void attach(Observer* pAnimator) {
         animator = pAnimator;
@@ -305,20 +252,19 @@ public:
     }
 
     // Notify the animator that Router finished it's job 
-    void notify(void* pDocPointer, void* pCoordinates) {
+    void notify(xml_document* pDocPointer, void* pCoordinates) {
         cout << "Router is done" << endl;
         cout << "--------------------------" << endl;
 
         animator->update(pDocPointer, pCoordinates);
     }
 
-    void update(void* pDocPointer, void* pCoordinates) {
+    void update(xml_document* pDocPointer, void* pCoordinates) {
         cout << "--------------------------" << endl;
         cout << "Router started working" << endl;
 
-        docPointer = (xml_document*)pDocPointer;
+        setDocPointer(pDocPointer);
         calculateQuadrantNormalCase();
-
     }
 
 };

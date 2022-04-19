@@ -28,17 +28,17 @@ public:
         delete animator;
     }
 
-    void work(void* pDocPointer, void* pCoordinates) {  
+    void work(xml_document* pDocPointer, void* pCoordinates) {  
         cout << "Selector is working..." << endl;
         notify(pDocPointer, pCoordinates);
     }
 
-    void notify(void* pDocPointer, void* pCoordinates) {
+    void notify(xml_document* pDocPointer, void* pCoordinates) {
         cout << "Selector is done" << endl;
         animator->update(pDocPointer, pCoordinates);
     }
 
-    void update(void* pDocPointer, void* pCoordinates) {
+    void update(xml_document* pDocPointer, void* pCoordinates) {
         work(pDocPointer, pCoordinates);
     }
 

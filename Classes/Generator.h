@@ -19,12 +19,12 @@ public:
     }
     ~Generator() {}
 
-    void work(void* pDocPointer, void* pCoordinates) {
+    void work(xml_document* pDocPointer, void* pCoordinates) {
         cout << "Working..." << endl;
         cout << "Animation complete" << endl;
     }
 
-    void update(void* pDocPointer, void* pCoordinates) {
+    void update(xml_document* pDocPointer, void* pCoordinates) {
         cout << "Generator started working" << endl;
         work(pDocPointer, pCoordinates);
     }
