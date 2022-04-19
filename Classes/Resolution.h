@@ -7,7 +7,7 @@
 using std::stringstream;
 using std::string;
 
-class Resolution{
+class Resolution {
 private:
     int width;
     int height;
@@ -40,8 +40,8 @@ public:
         height = pHeight;
     }
     
-    void setViewBoxResolution(string viewBox) {
-        stringstream stringManipulator(viewBox);
+    void setViewBoxResolution(string pViewBox, bool offset) {
+        stringstream stringManipulator(pViewBox);
         string extractedString;
 
         stringManipulator >> extractedString; // min-x
@@ -51,6 +51,11 @@ public:
         width = stoi(extractedString);
         stringManipulator >> extractedString;
         height = stoi(extractedString);
+        if(offset) {
+            int offset = (width + height)/40;
+            width -= offset;
+            height -= offset;
+        }
     }
 };
 

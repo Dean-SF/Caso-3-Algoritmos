@@ -8,7 +8,9 @@
 #include <algorithm>
 #include "Resolution.h"
 #include <unordered_set>
+#include "observerPattern.h"
 #include "../libraries/pugixml/pugixml.hpp"
+
 
 using std::find;
 using std::string;
@@ -32,8 +34,10 @@ In the g node goes all the shapes from the original SVG with matching color. In 
 a square in a given position. this svg node is copied by the amount of given points and changes the
 square in mask to the position of a point.
 */
-class Selector {
+class Selector : public Subject, public Observer {
 private:
+    Observer* animator;
+    int processId;
     int coordinateOffset;
     xml_document svgFile;
     //xml_node svgNodeGroup;
@@ -140,7 +144,7 @@ private:
 
     void selection() {
         xml_node previousSvgNode;
-        svgResolution.setViewBoxResolution(svgFile.child("svg").attribute("viewBox").value());
+        svgResolution.setViewBoxResolution(svgFile.child("svg").attribute("viewBox").value(),false);
         selectionAux(previousSvgNode, 0);
     }
 
@@ -149,15 +153,15 @@ public:
         svgLoadingResult = svgFile.load_file(&pPath[0]);
         //svgNodeGroup = nodeCreator.append_child("svg");
         coordinateOffset = 0;
+        processId = 0;
     }
 
-    // Starts the selection process
-    xml_document *start() {
-        if(!svgLoadingResult) {
-            return nullptr;
-        }
-        selection();
-        return &svgFile;
+    void attach(Observer* pAnimator) {
+        animator = pAnimator;
+    }
+
+    void detach(Observer* pAnimator) {
+        delete animator;
     }
 
     // setters and getters:
@@ -170,17 +174,42 @@ public:
         return svgResolution;
     }
 
-    void setColors(vector<string> pColorList) {
-        for(string color : pColorList) {
-            colors.insert(color);
-        }
+    int getProcessId() {
+        return processId;
     }
 
     void setCoordinates(vector<Point> pCoordinates) {
         coordinates = pCoordinates;
     }
 
-    
+    void setColors(vector<string> pColorList) {
+        for(string color : pColorList) {
+            colors.insert(color);
+        }
+    }
+
+    void work(xml_document* pDocPointer, void* pCoordinates) {  
+        cout << "Selector is working..." << endl;
+        notify(pDocPointer, pCoordinates);
+    }
+
+    void notify(xml_document* pDocPointer, void* pCoordinates) {
+        cout << "Selector is done" << endl;
+        animator->update(pDocPointer, pCoordinates);
+    }
+
+    void update(xml_document* pDocPointer, void* pCoordinates) {
+        work(pDocPointer, pCoordinates);
+    }
+
+    // Starts the selection process
+    xml_document *start() {
+        if(!svgLoadingResult) {
+            return nullptr;
+        }
+        selection();
+        return &svgFile;
+    }
 };
 
 #endif
