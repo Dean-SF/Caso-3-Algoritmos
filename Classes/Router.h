@@ -180,7 +180,7 @@ public:
         angle = pAngle;
         frames = pFrames;
         typeOfRoute = pTypeOfRoute;
-        docPointer = pDocPointer;
+        docPointer = nullptr;
         canvasSize.setViewBoxResolution(pDocPointer->child("svg").attribute("viewBox").value(),true); // set canvas size;
     }
     ~Router() {} 
