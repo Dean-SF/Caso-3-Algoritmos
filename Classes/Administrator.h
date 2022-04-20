@@ -7,7 +7,7 @@
 #include "Router.h"
 #include "Generator.h"
 #include "Point.h"
-#include "../../libraries/pugixml/pugixml.hpp"
+#include "../libraries/pugixml/pugixml.hpp"
 #include <string>
 #include <random>
 #include <iostream>
@@ -38,14 +38,18 @@ private:
     }
 
 public:
-    Administrator(xml_document* pDocPointer, vector<Point> pPoints, vector<string> pColors, double pAngle, int pFrames) {
-        docPointer = pDocPointer;
+    Administrator(string fileName, vector<Point> pPoints, vector<string> pColors, double pAngle, int pFrames) {
+        docPointer = new xml_document();
+        docPointer->load_file(&fileName[0]);
+
+        cout << pColors.size() << endl;
+
         TypeOfRoute typeOfRoute = chooseRandomTypeOfRoute();
 
-        Selector *selector = new Selector();
-        Router* router = new Router(pAngle, pFrames, typeOfRoute, pDocPointer);
-        Generator* generator = new Generator();
-        Animator* animator = new Animator();
+        selector = new Selector(pPoints,pColors);
+        router = new Router(pAngle, pFrames, typeOfRoute);
+        generator = new Generator(typeOfRoute,pFrames,fileName);
+        animator = new Animator();
         
         selector->attach(animator); // animator observes selector
         router->attach(animator);   // animator observes router

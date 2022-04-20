@@ -19,6 +19,7 @@ private:
 public:
     Animator() {
         stage = -1;
+        observers = list<Observer*>();
     }
     ~Animator() {}
 
@@ -42,6 +43,7 @@ public:
         stage++;
         for (Observer* observer : observers) {
             if (observer->getProcessId() == stage) {
+                cout << observer->getProcessId() << endl;
                 observer->update(pDocPointer, pCoordinates);
                 break;
             }

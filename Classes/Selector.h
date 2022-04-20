@@ -39,13 +39,12 @@ private:
     Observer* animator;
     int processId;
     int coordinateOffset;
-    xml_document svgFile;
-    //xml_node svgNodeGroup;
+    xml_document *svgFile;
+    xml_node mainSvgGroup;
     xml_document nodeCreator;
     Resolution svgResolution;
     vector<Point> coordinates;
     unordered_set<string> colors;
-    xml_parse_result svgLoadingResult;
 
     /*
     Calculates the pointOffset depending on the square size 
@@ -61,7 +60,7 @@ private:
     */
     void selectShapes(xml_node pSvgNodeGroup) {
         xml_node_iterator iterator;
-        xml_node mainSvgNode = svgFile.child("svg");
+        xml_node mainSvgNode = svgFile->child("svg");
         xml_node newSvgG = pSvgNodeGroup.append_child("g");
         newSvgG.append_attribute("mask").set_value("url(#punto");
         for(iterator = mainSvgNode.begin(); iterator != mainSvgNode.end(); iterator++) {
@@ -120,7 +119,7 @@ private:
         if(previousSvgNode.empty()) {
             previousSvgNode = generateSvgNodeGroup();
         }
-        xml_node newSvgNodeGroup = svgFile.child("svg").append_copy(previousSvgNode);
+        xml_node newSvgNodeGroup = mainSvgGroup.append_copy(previousSvgNode);
         xml_node SvgNodeGroupMask = newSvgNodeGroup.child("mask");
         string maskId = SvgNodeGroupMask.attribute("id").value();
         maskId = maskId.substr(0,5) + to_string(pCoordsIndex);
@@ -144,14 +143,15 @@ private:
 
     void selection() {
         xml_node previousSvgNode;
-        svgResolution.setViewBoxResolution(svgFile.child("svg").attribute("viewBox").value(),false);
+        mainSvgGroup = svgFile->child("svg").append_child("svg");
+        svgResolution.setViewBoxResolution(svgFile->child("svg").attribute("viewBox").value(),false);
         selectionAux(previousSvgNode, 0);
     }
 
 public:
-    Selector(string pPath) {
-        svgLoadingResult = svgFile.load_file(&pPath[0]);
-        //svgNodeGroup = nodeCreator.append_child("svg");
+    Selector(vector<Point> pCoordinates, vector<string> pColors) {
+        coordinates = pCoordinates;
+        setColors(pColors);
         coordinateOffset = 0;
         processId = 0;
     }
@@ -188,9 +188,10 @@ public:
         }
     }
 
-    void work(xml_document* pDocPointer, void* pCoordinates) {  
+    void work() {  
         cout << "Selector is working..." << endl;
-        notify(pDocPointer, pCoordinates);
+        selection();
+        notify(svgFile, &coordinates);
     }
 
     void notify(xml_document* pDocPointer, void* pCoordinates) {
@@ -199,17 +200,11 @@ public:
     }
 
     void update(xml_document* pDocPointer, void* pCoordinates) {
-        work(pDocPointer, pCoordinates);
+        cout << "test" << endl;
+        svgFile = pDocPointer;
+        work();
     }
 
-    // Starts the selection process
-    xml_document *start() {
-        if(!svgLoadingResult) {
-            return nullptr;
-        }
-        selection();
-        return &svgFile;
-    }
 };
 
 #endif

@@ -21,7 +21,7 @@ int main() {
     points.emplace_back(Point(50,100));
     points.emplace_back(Point(100,200));
     points.emplace_back(Point(100,320));
-    points.emplace_back(Point(350,400));
+    points.emplace_back(Point(350,200));
     points.emplace_back(Point(350,400));
     points.emplace_back(Point(250,400));
 
@@ -35,11 +35,10 @@ int main() {
     colors.emplace_back("#2EB9FF");
     colors.emplace_back("#0097F4");
 
-    xml_document doc;
-    doc.load_file("./SVGPLANTILLA.svg");
-    xml_document *docPointer = &doc;
+    string fileName = "svgcaso3.svg";
 
-    Administrator *admin = new Administrator(docPointer, points, colors, angle, frames);
+    Administrator *admin = new Administrator(fileName, points, colors, angleTransformed, frames);
+    
     admin->startAnimationProcess();
 
     return 0;

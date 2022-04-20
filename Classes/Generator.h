@@ -32,16 +32,19 @@ private:
 
     void makeFiles() {
         xml_node mainSvgNode = docPointer->child("svg").last_child();
-        xml_node_iterator svgIterator = mainSvgNode.begin();
+
+        originalFileName = "./Result/" + originalFileName.substr(0,originalFileName.size()-4);
+
         for(int i = 0; i < frames; i++) {
+            xml_node_iterator svgIterator = mainSvgNode.begin();
             for(Point *actual : *distances) {
                 svgIterator->attribute("x").set_value(actual->getHorizontalAxis()*(i+1));
                 svgIterator->attribute("y").set_value(actual->getVerticalAxis()*(i+1));
                 svgIterator++;
             }
             docPointer->name();
-            originalFileName += "-" + to_string(i);
-            ofstream *copyFile = new ofstream(originalFileName,ofstream::trunc);
+            string newFileName = originalFileName + "-" + to_string(i+1) + ".svg";
+            ofstream *copyFile = new ofstream(newFileName,ofstream::trunc);
             stringstream svgWritter;
             docPointer->save(svgWritter," ");
             string stringXML = svgWritter.str();
