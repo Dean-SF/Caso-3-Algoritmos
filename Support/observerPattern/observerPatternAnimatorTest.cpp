@@ -39,7 +39,7 @@ int main() {
     doc.load_file("./SVGPLANTILLA.svg");
     xml_document *docPointer = &doc;
 
-    Administrator *admin = new Administrator(docPointer, points, colors, angle, frames);
+    Administrator *admin = new Administrator(docPointer, &points, &colors, angle, frames);
     admin->startAnimationProcess();
 
     return 0;
