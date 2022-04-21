@@ -336,6 +336,7 @@ public:
         cout << "Router started working" << endl;
 
         setDocPointer(pDocPointer);
+        canvasSize.setViewBoxResolution(pDocPointer->child("svg").attribute("viewBox").value(),true); // set canvas size;
         // vector<Point> *originalPointsPointer = (vector<Point>*)pCoordinates;
         // vector<Point> originalPoints = originalPointsPointer[0];
         // setCoordinates(originalPoints);

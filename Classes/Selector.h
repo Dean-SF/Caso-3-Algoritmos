@@ -43,7 +43,7 @@ private:
     xml_node mainSvgGroup;
     xml_document nodeCreator;
     Resolution svgResolution;
-    vector<Point> coordinates;
+    vector<Point> *coordinates;
     unordered_set<string> colors;
 
     /*
@@ -113,7 +113,7 @@ private:
     each point given to the algorithm
     */
     void selectionAux(xml_node previousSvgNode, int pCoordsIndex) {
-        if(pCoordsIndex >= coordinates.size()) {
+        if(pCoordsIndex >= coordinates->size()) {
             return;
         }
         if(previousSvgNode.empty()) {
@@ -126,7 +126,7 @@ private:
         SvgNodeGroupMask.attribute("id").set_value(&maskId[0]);
         xml_node SquareMask = SvgNodeGroupMask.child("rect");
 
-        Point currentPoint = coordinates[pCoordsIndex];
+        Point currentPoint = (*coordinates)[pCoordsIndex];
 
         SquareMask.attribute("x").set_value(currentPoint.getHorizontalAxis() - coordinateOffset);
         SquareMask.attribute("y").set_value(currentPoint.getVerticalAxis() - coordinateOffset);
@@ -149,8 +149,7 @@ private:
     }
 
 public:
-    Selector(vector<Point> pCoordinates, vector<string> pColors) {
-        coordinates = pCoordinates;
+    Selector(vector<string> pColors) {
         setColors(pColors);
         coordinateOffset = 0;
         processId = 0;
@@ -166,7 +165,7 @@ public:
 
     // setters and getters:
 
-    vector<Point> getCoordinates() {
+    vector<Point> *getCoordinates() {
         return coordinates;
     }
 
@@ -178,7 +177,7 @@ public:
         return processId;
     }
 
-    void setCoordinates(vector<Point> pCoordinates) {
+    void setCoordinates(vector<Point> *pCoordinates) {
         coordinates = pCoordinates;
     }
 
@@ -202,6 +201,7 @@ public:
     void update(xml_document* pDocPointer, void* pCoordinates) {
         cout << "test" << endl;
         svgFile = pDocPointer;
+        coordinates = (vector<Point>*) pCoordinates;
         work();
     }
 

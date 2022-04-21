@@ -25,7 +25,7 @@ private:
     Router *router;
     Generator *generator;
     xml_document *docPointer;
-    vector<Point> *points;
+    vector<Point> points;
 
     // Choose a type of route randomly, generate random number from 0 to 1 -> 0 = straight, 1 = curved
     TypeOfRoute chooseRandomTypeOfRoute() {
@@ -44,11 +44,11 @@ public:
         docPointer = new xml_document();
         docPointer->load_file(&fileName[0]);
 
-        cout << pColors.size() << endl;
+        points = pPoints;
 
-        TypeOfRoute typeOfRoute = chooseRandomTypeOfRoute();
+        TypeOfRoute typeOfRoute = TypeOfRoute::straightRoute;//chooseRandomTypeOfRoute();
 
-        selector = new Selector(pPoints,pColors);
+        selector = new Selector(pColors);
         router = new Router(pAngle, pFrames, typeOfRoute);
         generator = new Generator(typeOfRoute,pFrames,fileName);
         animator = new Animator();
@@ -66,10 +66,11 @@ public:
         delete router;
         delete generator;
         delete animator;
+        delete docPointer;
     }
 
     void startAnimationProcess() {
-        animator->notify(docPointer, points);
+        animator->notify(docPointer, &points);
     }
 
 };
