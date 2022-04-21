@@ -180,37 +180,34 @@ private:
         vector<vector<Point*>> distancesForCurvedRoute;
     
         for (int pointIterator = 0; pointIterator < coordinates.size(); pointIterator++) {
-                int yAxisFinalPoint = coordinates[pointIterator].getVerticalAxis() + distances[pointIterator]->getVerticalAxis() * frames;
-                
-                if (distances[pointIterator]->getVerticalAxis() < 0) 
-                    yAxisFinalPoint = coordinates[pointIterator].getVerticalAxis() + (distances[pointIterator]->getVerticalAxis() * -1) * frames;
+            int yAxisFinalPoint = coordinates[pointIterator].getVerticalAxis() + distances[pointIterator]->getVerticalAxis() * frames;
 
-                int xAxisFinalPoint = coordinates[pointIterator].getHorizontalAxis() + (distances[pointIterator]->getHorizontalAxis() * frames);
-                
-                Point *initialPoint = new Point(coordinates[pointIterator].getHorizontalAxis(), coordinates[pointIterator].getVerticalAxis());
-                Point *finalPoint = new Point(xAxisFinalPoint,yAxisFinalPoint);
-
-                double slope = ((double)finalPoint->getVerticalAxis() - (double)initialPoint->getVerticalAxis()) / 
-                ((double)finalPoint->getHorizontalAxis() - (double)initialPoint->getHorizontalAxis());
-
-                int xAxisMediumPoint = (initialPoint->getHorizontalAxis() + finalPoint->getHorizontalAxis()) / 2;
-                int yAxisMediumPoint = (initialPoint->getVerticalAxis() + finalPoint->getVerticalAxis()) / 2;
-                Point *mediumPoint = new Point(xAxisMediumPoint, yAxisMediumPoint);
-
-                int squareSize = (getWidth() + 50 + getHeight() + 50) / 40;
-                double perpendicularSlope = 1 - slope;
-                double bFunction = mediumPoint->getVerticalAxis() - (perpendicularSlope * mediumPoint->getHorizontalAxis());
-                
-                int newXAxis = mediumPoint->getHorizontalAxis() + squareSize;
-                int newYAxis = perpendicularSlope * newXAxis + bFunction;   // y = mx + b
+            int xAxisFinalPoint = coordinates[pointIterator].getHorizontalAxis() + (distances[pointIterator]->getHorizontalAxis() * frames);
             
-                Point *guideForCurve = new Point(newXAxis, newYAxis);
+            Point *initialPoint = new Point(coordinates[pointIterator].getHorizontalAxis(), coordinates[pointIterator].getVerticalAxis());
+            Point *finalPoint = new Point(xAxisFinalPoint,yAxisFinalPoint);
 
-                vector<Point*> pointTriplets;
-                pointTriplets.emplace_back(initialPoint);
-                pointTriplets.emplace_back(finalPoint);
-                pointTriplets.emplace_back(guideForCurve);
-                distancesForCurvedRoute.emplace_back(pointTriplets);
+            double slope = ((double)finalPoint->getVerticalAxis() - (double)initialPoint->getVerticalAxis()) / 
+            ((double)finalPoint->getHorizontalAxis() - (double)initialPoint->getHorizontalAxis());
+
+            int xAxisMediumPoint = (initialPoint->getHorizontalAxis() + finalPoint->getHorizontalAxis()) / 2;
+            int yAxisMediumPoint = (initialPoint->getVerticalAxis() + finalPoint->getVerticalAxis()) / 2;
+            Point *mediumPoint = new Point(xAxisMediumPoint, yAxisMediumPoint);
+
+            int squareSize = (getWidth() + 50 + getHeight() + 50) / 40;
+            double perpendicularSlope = 1 - slope;
+            double bFunction = mediumPoint->getVerticalAxis() - (perpendicularSlope * mediumPoint->getHorizontalAxis());
+            
+            int newXAxis = mediumPoint->getHorizontalAxis() + squareSize;
+            int newYAxis = perpendicularSlope * newXAxis + bFunction;   // y = mx + b
+        
+            Point *guideForCurve = new Point(newXAxis, newYAxis);
+
+            vector<Point*> pointTriplets;
+            pointTriplets.emplace_back(initialPoint);
+            pointTriplets.emplace_back(finalPoint);
+            pointTriplets.emplace_back(guideForCurve);
+            distancesForCurvedRoute.emplace_back(pointTriplets);
         }
         printPointsCurvedRoute(distancesForCurvedRoute);    // REMOVE LATER!
         notify(docPointer, &distancesForCurvedRoute);
