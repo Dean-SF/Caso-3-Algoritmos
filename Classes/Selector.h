@@ -126,10 +126,14 @@ private:
         SvgNodeGroupMask.attribute("id").set_value(&maskId[0]);
         xml_node SquareMask = SvgNodeGroupMask.child("rect");
 
-        Point currentPoint = coordinates[pCoordsIndex];
+        Point *currentPoint = &(coordinates[pCoordsIndex]);
+        currentPoint->setHorizontalAxis(currentPoint->getHorizontalAxis() - coordinateOffset);
+        currentPoint->setVerticalAxis(currentPoint->getVerticalAxis() - coordinateOffset);
+        
 
-        SquareMask.attribute("x").set_value(currentPoint.getHorizontalAxis() - coordinateOffset);
-        SquareMask.attribute("y").set_value(currentPoint.getVerticalAxis() - coordinateOffset);
+        SquareMask.attribute("x").set_value(currentPoint->getHorizontalAxis());
+        SquareMask.attribute("y").set_value(currentPoint->getVerticalAxis());
+        
 
         xml_node gNodeSvg = newSvgNodeGroup.child("g");
         maskId = gNodeSvg.attribute("mask").value();
