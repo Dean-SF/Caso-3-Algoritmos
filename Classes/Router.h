@@ -92,26 +92,24 @@ private:
         cout << "Cuadrant = " << quadrant << endl;
         cout << "Angle = " << angle << endl;
 
-        xml_node mainSvgNode = docPointer->child("svg").last_child(); 
-        xml_node_iterator nodeIterator; 
-        for(nodeIterator = mainSvgNode.begin(); nodeIterator != mainSvgNode.end(); nodeIterator++) {
+        for(Point actual : coordinates) {
             int coordinate;
 
             switch (quadrant) {
                 case 1: // initial angle = 0
-                    coordinate = stoi((*nodeIterator).child("mask").child("rect").attribute("x").value());
+                    coordinate = actual.getHorizontalAxis();
                     distances.emplace_back(new Point((canvasSize.getWidth() - coordinate)/frames,0));
                     break;
                 case 2: // initial angle = 90
-                    coordinate = stoi((*nodeIterator).child("mask").child("rect").attribute("y").value());
+                    coordinate = actual.getVerticalAxis();
                     distances.emplace_back(new Point(0,-(coordinate/frames)));
                     break;
                 case 3: // initial angle = 180
-                    coordinate = stoi((*nodeIterator).child("mask").child("rect").attribute("x").value());
+                    coordinate = actual.getHorizontalAxis();
                     distances.emplace_back(new Point(-(coordinate/frames),0));
                     break;
                 case 4: // initial angle = 270
-                    coordinate = stoi((*nodeIterator).child("mask").child("rect").attribute("y").value());
+                    coordinate = actual.getVerticalAxis();
                     distances.emplace_back(new Point(0,(canvasSize.getHeight() - coordinate)/frames));
                     break;
                 default: 
@@ -137,13 +135,9 @@ private:
         
         double firstLeg,secondLeg,slope,linearConstant; // leg -> cateto
 
-        xml_node node;
-        xml_node mainSvgNode = docPointer->child("svg").last_child();
-        xml_node_iterator nodeIteratorParent;
-        for(nodeIteratorParent = mainSvgNode.begin(); nodeIteratorParent != mainSvgNode.end(); nodeIteratorParent++) {
-            node = *nodeIteratorParent;
-            xAxis = stoi(node.child("mask").child("rect").attribute("x").value());
-            yAxis = stoi(node.child("mask").child("rect").attribute("y").value());
+        for(Point actual : coordinates) {
+            xAxis = actual.getHorizontalAxis();
+            yAxis = actual.getVerticalAxis();
 
             if (quadrant == 1 || quadrant == 4) {
                 firstLeg = canvasSize.getWidth() - xAxis;
