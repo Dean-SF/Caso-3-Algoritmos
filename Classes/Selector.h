@@ -43,7 +43,7 @@ private:
     xml_node mainSvgGroup;
     xml_document nodeCreator;
     Resolution svgResolution;
-    vector<Point> coordinates;
+    vector<Point> *coordinates;
     unordered_set<string> colors;
 
     /*
@@ -113,7 +113,7 @@ private:
     each point given to the algorithm
     */
     void selectionAux(xml_node previousSvgNode, int pCoordsIndex) {
-        if(pCoordsIndex >= coordinates.size()) {
+        if(pCoordsIndex >= coordinates->size()) {
             return;
         }
         if(previousSvgNode.empty()) {
@@ -126,7 +126,11 @@ private:
         SvgNodeGroupMask.attribute("id").set_value(&maskId[0]);
         xml_node SquareMask = SvgNodeGroupMask.child("rect");
 
+<<<<<<< HEAD
         Point *currentPoint = &(coordinates[pCoordsIndex]);
+=======
+        Point *currentPoint = &((*coordinates)[pCoordsIndex]);
+>>>>>>> c59eb44bbdf300d695baebf8237c823df91872df
         currentPoint->setHorizontalAxis(currentPoint->getHorizontalAxis() - coordinateOffset);
         currentPoint->setVerticalAxis(currentPoint->getVerticalAxis() - coordinateOffset);
 
@@ -152,8 +156,7 @@ private:
     }
 
 public:
-    Selector(vector<Point> pCoordinates, vector<string> pColors) {
-        coordinates = pCoordinates;
+    Selector(vector<string> pColors) {
         setColors(pColors);
         coordinateOffset = 0;
         processId = 0;
@@ -169,7 +172,7 @@ public:
 
     // setters and getters:
 
-    vector<Point> getCoordinates() {
+    vector<Point> *getCoordinates() {
         return coordinates;
     }
 
@@ -181,7 +184,7 @@ public:
         return processId;
     }
 
-    void setCoordinates(vector<Point> pCoordinates) {
+    void setCoordinates(vector<Point> *pCoordinates) {
         coordinates = pCoordinates;
     }
 
@@ -194,7 +197,7 @@ public:
     void work() {  
         cout << "Selector is working..." << endl;
         selection();
-        notify(svgFile, &coordinates);
+        notify(svgFile, coordinates);
     }
 
     void notify(xml_document* pDocPointer, void* pCoordinates) {
@@ -205,6 +208,7 @@ public:
     void update(xml_document* pDocPointer, void* pCoordinates) {
         cout << "test" << endl;
         svgFile = pDocPointer;
+        coordinates = (vector<Point>*) pCoordinates;
         work();
     }
 

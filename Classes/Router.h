@@ -29,13 +29,13 @@ private:
     TypeOfRoute typeOfRoute;
     xml_document* docPointer;
     vector<Point*> distances; 
+    vector<Point> coordinates; // coordinates from each mask->rect
     int processId;
     
     Resolution canvasSize; 
     double angle;
     int frames;
     int quadrant; 
-
 
     // Debug only, remove for final release just to print the resulting vector
     void printDistances() {
@@ -101,24 +101,32 @@ private:
                 case 1: // initial angle = 0
                     coordinate = stoi((*nodeIterator).child("mask").child("rect").attribute("x").value());
                     distances.emplace_back(new Point((canvasSize.getWidth() - coordinate)/frames,0));
+                    coordinates.emplace_back(Point(coordinate,0));
                     break;
                 case 2: // initial angle = 90
                     coordinate = stoi((*nodeIterator).child("mask").child("rect").attribute("y").value());
                     distances.emplace_back(new Point(0,-(coordinate/frames)));
+                    coordinates.emplace_back(Point(0,coordinate));
                     break;
                 case 3: // initial angle = 180
                     coordinate = stoi((*nodeIterator).child("mask").child("rect").attribute("x").value());
                     distances.emplace_back(new Point(-(coordinate/frames),0));
+                    coordinates.emplace_back(Point(coordinate,0));
                     break;
                 case 4: // initial angle = 270
                     coordinate = stoi((*nodeIterator).child("mask").child("rect").attribute("y").value());
                     distances.emplace_back(new Point(0,(canvasSize.getHeight() - coordinate)/frames));
+                    coordinates.emplace_back(Point(0,coordinate));
                     break;
                 default: 
                     break;
             }
         }
         printDistances(); // for debugging
+        
+        if (getTypeOfRoute() == TypeOfRoute::curvedRoute) 
+            calculateCurvedRoute();
+        
         notify(docPointer, &distances);
     }
 
@@ -140,7 +148,8 @@ private:
             node = *nodeIteratorParent;
             xAxis = stoi(node.child("mask").child("rect").attribute("x").value());
             yAxis = stoi(node.child("mask").child("rect").attribute("y").value());
-        
+            coordinates.emplace_back(Point(xAxis,yAxis));
+
             if (quadrant == 1 || quadrant == 4) {
                 firstLeg = canvasSize.getWidth() - xAxis;
                 secondLeg = tan(angle)*firstLeg;
@@ -169,8 +178,63 @@ private:
 
             distances.emplace_back(new Point(firstLeg/frames,secondLeg/frames));
         }
-        printDistances(); // remove letter in final release
+        printDistances(); // REMOVE LATER!
+
+        if (getTypeOfRoute() == TypeOfRoute::curvedRoute) 
+            calculateCurvedRoute();
+        
         notify(docPointer, &distances);
+    }
+
+
+    void calculateCurvedRoute() {
+        vector<vector<Point*>> distancesForCurvedRoute;
+    
+        for (int pointIterator = 0; pointIterator < coordinates.size(); pointIterator++) {
+                int yAxisFinalPoint = coordinates[pointIterator].getVerticalAxis() + distances[pointIterator]->getVerticalAxis() * frames;
+                
+                if (distances[pointIterator]->getVerticalAxis() < 0) 
+                    yAxisFinalPoint = coordinates[pointIterator].getVerticalAxis() + (distances[pointIterator]->getVerticalAxis() * -1) * frames;
+
+                int xAxisFinalPoint = coordinates[pointIterator].getHorizontalAxis() + (distances[pointIterator]->getHorizontalAxis() * frames);
+                
+                Point *initialPoint = new Point(coordinates[pointIterator].getHorizontalAxis(), coordinates[pointIterator].getVerticalAxis());
+                Point *finalPoint = new Point(xAxisFinalPoint,yAxisFinalPoint);
+
+                double slope = ((double)finalPoint->getVerticalAxis() - (double)initialPoint->getVerticalAxis()) / 
+                ((double)finalPoint->getHorizontalAxis() - (double)initialPoint->getHorizontalAxis());
+
+                int xAxisMediumPoint = (initialPoint->getHorizontalAxis() + finalPoint->getHorizontalAxis()) / 2;
+                int yAxisMediumPoint = (initialPoint->getVerticalAxis() + finalPoint->getVerticalAxis()) / 2;
+                Point *mediumPoint = new Point(xAxisMediumPoint, yAxisMediumPoint);
+
+                int squareSize = (getWidth() + 50 + getHeight() + 50) / 40;
+                double perpendicularSlope = 1 - slope;
+                double bFunction = mediumPoint->getVerticalAxis() - (perpendicularSlope * mediumPoint->getHorizontalAxis());
+                
+                int newXAxis = mediumPoint->getHorizontalAxis() + squareSize;
+                int newYAxis = perpendicularSlope * newXAxis + bFunction;   // y = mx + b
+            
+                Point *guideForCurve = new Point(newXAxis, newYAxis);
+
+                vector<Point*> pointTriplets;
+                pointTriplets.emplace_back(initialPoint);
+                pointTriplets.emplace_back(finalPoint);
+                pointTriplets.emplace_back(guideForCurve);
+                distancesForCurvedRoute.emplace_back(pointTriplets);
+        }
+        printPointsCurvedRoute(distancesForCurvedRoute);    // REMOVE LATER!
+        notify(docPointer, &distancesForCurvedRoute);
+    }
+
+    // For debug only
+    void printPointsCurvedRoute(vector<vector<Point*>> dist) {
+        for (int i = 0; i < dist.size(); i++) {
+            cout << "--------- Para el punto " << i << "--------" << endl;
+            for (int j = 0; j < 3; j++) {
+                cout << "(" << dist[i][j]->getHorizontalAxis() << "," << dist[i][j]->getVerticalAxis() << ")" << endl;
+            }
+        }
     }
 
 public:
@@ -229,6 +293,14 @@ public:
         processId = pProcessId;
     }
 
+    vector<Point> getCoordinates() {
+        return coordinates;
+    }
+
+    void setCoordinates(vector<Point> pCoordinates) {
+        coordinates = pCoordinates;
+    }
+
     xml_document* getDocPointer() {
         return docPointer;
     }
@@ -262,8 +334,12 @@ public:
     void update(xml_document* pDocPointer, void* pCoordinates) {
         cout << "--------------------------" << endl;
         cout << "Router started working" << endl;
+
         setDocPointer(pDocPointer);
         canvasSize.setViewBoxResolution(pDocPointer->child("svg").attribute("viewBox").value(),true); // set canvas size;
+        // vector<Point> *originalPointsPointer = (vector<Point>*)pCoordinates;
+        // vector<Point> originalPoints = originalPointsPointer[0];
+        // setCoordinates(originalPoints);
         calculateQuadrantNormalCase();
     }
 
