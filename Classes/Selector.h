@@ -129,7 +129,6 @@ private:
         Point *currentPoint = &(coordinates[pCoordsIndex]);
         currentPoint->setHorizontalAxis(currentPoint->getHorizontalAxis() - coordinateOffset);
         currentPoint->setVerticalAxis(currentPoint->getVerticalAxis() - coordinateOffset);
-        
 
         SquareMask.attribute("x").set_value(currentPoint->getHorizontalAxis());
         SquareMask.attribute("y").set_value(currentPoint->getVerticalAxis());
