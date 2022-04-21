@@ -238,15 +238,14 @@ private:
     }
 
 public:
-    Router(double pAngle, int pFrames, TypeOfRoute pTypeOfRoute, xml_document* pDocPointer) {
+    Router(double pAngle, int pFrames, TypeOfRoute pTypeOfRoute) {
         animator = nullptr;
         processId = 1;
         angle = pAngle;
         frames = pFrames;
         typeOfRoute = pTypeOfRoute;
         docPointer = nullptr;
-        quadrant = 0;
-        canvasSize.setViewBoxResolution(pDocPointer->child("svg").attribute("viewBox").value(),true); // set canvas size;
+        
     }
     ~Router() {} 
 
@@ -337,6 +336,7 @@ public:
         cout << "Router started working" << endl;
 
         setDocPointer(pDocPointer);
+        canvasSize.setViewBoxResolution(pDocPointer->child("svg").attribute("viewBox").value(),true); // set canvas size;
         // vector<Point> *originalPointsPointer = (vector<Point>*)pCoordinates;
         // vector<Point> originalPoints = originalPointsPointer[0];
         // setCoordinates(originalPoints);

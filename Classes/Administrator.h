@@ -7,7 +7,7 @@
 #include "Router.h"
 #include "Generator.h"
 #include "Point.h"
-#include "../../libraries/pugixml/pugixml.hpp"
+#include "../libraries/pugixml/pugixml.hpp"
 #include <string>
 #include <random>
 #include <iostream>
@@ -25,7 +25,7 @@ private:
     Router *router;
     Generator *generator;
     xml_document *docPointer;
-    vector<Point> *points;
+    vector<Point> points;
 
     // Choose a type of route randomly, generate random number from 0 to 1 -> 0 = straight, 1 = curved
     TypeOfRoute chooseRandomTypeOfRoute() {
@@ -40,14 +40,17 @@ private:
     }
 
 public:
-    Administrator(xml_document* pDocPointer, vector<Point> *pPoints, vector<string> *pColors, double pAngle, int pFrames) {
-        docPointer = pDocPointer;
-        points = pPoints;
-        TypeOfRoute typeOfRoute = chooseRandomTypeOfRoute();
+    Administrator(string fileName, vector<Point> pPoints, vector<string> pColors, double pAngle, int pFrames) {
+        docPointer = new xml_document();
+        docPointer->load_file(&fileName[0]);
 
-        selector = new Selector();
-        router = new Router(pAngle, pFrames, typeOfRoute, pDocPointer);
-        generator = new Generator();
+        points = pPoints;
+
+        TypeOfRoute typeOfRoute = TypeOfRoute::straightRoute;//chooseRandomTypeOfRoute();
+
+        selector = new Selector(pColors);
+        router = new Router(pAngle, pFrames, typeOfRoute);
+        generator = new Generator(typeOfRoute,pFrames,fileName);
         animator = new Animator();
         
         selector->attach(animator); // animator observes selector
@@ -63,10 +66,11 @@ public:
         delete router;
         delete generator;
         delete animator;
+        delete docPointer;
     }
 
     void startAnimationProcess() {
-        animator->notify(docPointer, points);
+        animator->notify(docPointer, &points);
     }
 
 };
