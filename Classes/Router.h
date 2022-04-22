@@ -196,10 +196,10 @@ private:
 
             int squareSize = (getWidth() + 50 + getHeight() + 50) / 40;
             double perpendicularSlope = 1 - slope;
-            double bFunction = mediumPoint->getVerticalAxis() - (perpendicularSlope * mediumPoint->getHorizontalAxis());
+            double linearConstant = mediumPoint->getVerticalAxis() - (perpendicularSlope * mediumPoint->getHorizontalAxis());
             
             int newXAxis = mediumPoint->getHorizontalAxis() + squareSize;
-            int newYAxis = perpendicularSlope * newXAxis + bFunction;   // y = mx + b
+            int newYAxis = perpendicularSlope * newXAxis + linearConstant;   // y = mx + b
         
             Point *guideForCurve = new Point(newXAxis, newYAxis);
 
