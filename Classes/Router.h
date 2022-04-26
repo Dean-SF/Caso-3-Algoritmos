@@ -197,12 +197,12 @@ private:
                 ((double)finalPoint->getHorizontalAxis() - (double)initialPoint->getHorizontalAxis());
                 
                 double perpendicularSlope = -1.0/slope;
-                double bFunction = mediumPoint->getVerticalAxis() - (perpendicularSlope * mediumPoint->getHorizontalAxis());
+                double linearConstant = mediumPoint->getVerticalAxis() - (perpendicularSlope * mediumPoint->getHorizontalAxis());
                 
                 newXAxis = mediumPoint->getHorizontalAxis() + xAxisOffset;
-                newYAxis = perpendicularSlope * newXAxis + bFunction;   // y = mx + b
+                newYAxis = perpendicularSlope * newXAxis + linearConstant;   // y = mx + b
 
-                cout << "y = " << perpendicularSlope << " * x + " << bFunction << endl;
+                cout << "y = " << perpendicularSlope << " * x + " << linearConstant << endl;
             } else {
                 newXAxis = mediumPoint->getHorizontalAxis();
                 newYAxis = mediumPoint->getVerticalAxis() + squareSize;
