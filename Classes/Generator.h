@@ -1,6 +1,7 @@
 #ifndef GENERATOR_H
 #define GENERATOR_H
 
+
 #include <queue>
 #include <thread>
 #include <string>
@@ -10,6 +11,7 @@
 #include <sstream>
 #include <unistd.h>
 #include <iostream>
+#include <sys/stat.h>
 #include "TypeOfRoute.h"
 #include "ObserverPattern.h"
 #include "../libraries/pugixml/pugixml.hpp"
@@ -27,6 +29,7 @@ using std::stringstream;
 using pugi::xml_document;
 using pugi::xml_node_iterator;
 
+
 class Generator : public Observer {
 private:
 
@@ -36,7 +39,7 @@ private:
     string originalFileName;
     TypeOfRoute route;
     xml_document *docPointer;
-    vector<Point*> *distances;
+    void *distances;
     queue<xml_document*> docs;
 
     Point beizerCurve(Point originPoint, Point middlePoint, Point lastPoint, double percentage) {
@@ -48,17 +51,28 @@ private:
                        2*(1-percentage)*percentage*middlePoint.getVerticalAxis() + 
                        pow(percentage,2)*lastPoint.getVerticalAxis();
 
+        cout << xAxis << " . " << yAxis << endl;
+
         return Point(xAxis-originPoint.getHorizontalAxis(),yAxis-originPoint.getVerticalAxis());
     }
-
+    
     void makeFiles() {
         xml_node mainSvgNode = docPointer->child("svg").last_child();
         for(int i = 0; i < frames; i++) {
             xml_node_iterator svgIterator = mainSvgNode.begin();
-            for(Point *actual : *distances) {
-                svgIterator->attribute("x").set_value(actual->getHorizontalAxis()*(i+1));
-                svgIterator->attribute("y").set_value(actual->getVerticalAxis()*(i+1));
-                svgIterator++;
+            if(route == TypeOfRoute::straightRoute) {
+                for(Point *actual : *(vector<Point*>*)distances) {
+                    svgIterator->attribute("x").set_value(actual->getHorizontalAxis()*(i+1));
+                    svgIterator->attribute("y").set_value(actual->getVerticalAxis()*(i+1));
+                    svgIterator++;
+                }
+            } else {
+                for(vector<Point*> actual : *((vector<vector<Point*>>*)distances)) {
+                    Point newOffset = beizerCurve(*actual[0],*actual[2],*actual[1],(1.0/frames)*(i+1));
+                    svgIterator->attribute("x").set_value(newOffset.getHorizontalAxis());
+                    svgIterator->attribute("y").set_value(newOffset.getVerticalAxis());
+                    svgIterator++;
+                }
             }
             xml_document *copiedDoc = new xml_document();
             copiedDoc->reset(*docPointer);
@@ -99,7 +113,8 @@ public:
         route = pRoute;
         frames = pFrames;
         originalFileName = pFileName;
-        originalFileName = "./Result/" + originalFileName.substr(0,originalFileName.size()-4);
+        originalFileName = "./Result/" + originalFileName.substr(0,originalFileName.size()-4);\
+        mkdir("./Result/");
         keepRepetingConsumer = true;
     }
 

@@ -3,32 +3,32 @@
 
 class Point {
 private:
-    int horizontalAxis;
-    int verticalAxis;
+    double horizontalAxis;
+    double verticalAxis;
 public:
     Point() {
         horizontalAxis = 0;
         verticalAxis = 0;
     }
 
-    Point(int pHorizontalAxis,int pVerticalAxis) {
+    Point(double pHorizontalAxis,double pVerticalAxis) {
         horizontalAxis = pHorizontalAxis;
         verticalAxis = pVerticalAxis;
     }
 
-    int getHorizontalAxis() {
+    double getHorizontalAxis() {
         return horizontalAxis;
     }
 
-    int getVerticalAxis() {
+    double getVerticalAxis() {
         return verticalAxis;
     }
 
-    void setHorizontalAxis(int pHorizontalAxis) {
+    void setHorizontalAxis(double pHorizontalAxis) {
         horizontalAxis = pHorizontalAxis;
     }
 
-    void setVerticalAxis(int pVerticalAxis) {
+    void setVerticalAxis(double pVerticalAxis) {
         verticalAxis = pVerticalAxis;
     }
 

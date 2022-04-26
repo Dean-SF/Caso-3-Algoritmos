@@ -45,7 +45,7 @@ private:
     }
 
 
-    void calculateQuadrantNormalCase() {
+    void calculateQuadrant() {
         double rightLimit, leftLimit, upperLimit, lowerLimit;
         leftLimit = M_PI;                   // 180°
         rightLimit = 2 * M_PI;              // 360° 
@@ -94,7 +94,6 @@ private:
 
         for(Point actual : coordinates) {
             int coordinate;
-
             switch (quadrant) {
                 case 1: // initial angle = 0
                     coordinate = actual.getHorizontalAxis();
@@ -177,40 +176,52 @@ private:
 
 
     void calculateCurvedRoute() {
-        vector<vector<Point*>> distancesForCurvedRoute;
-    
+        double newXAxis,newYAxis;
+        int squareSize = 3*(getWidth() + 50 + getHeight() + 50) / 40;
+        double xAxisOffset = squareSize * pow(((2.0*angle)/(double)M_PI),90.0/100.0);
+        vector<vector<Point*>> *distancesForCurvedRoute = new vector<vector<Point*>>();
         for (int pointIterator = 0; pointIterator < coordinates.size(); pointIterator++) {
-            int yAxisFinalPoint = coordinates[pointIterator].getVerticalAxis() + distances[pointIterator]->getVerticalAxis() * frames;
+            double yAxisFinalPoint = coordinates[pointIterator].getVerticalAxis() + distances[pointIterator]->getVerticalAxis() * frames;
 
-            int xAxisFinalPoint = coordinates[pointIterator].getHorizontalAxis() + (distances[pointIterator]->getHorizontalAxis() * frames);
+            double xAxisFinalPoint = coordinates[pointIterator].getHorizontalAxis() + (distances[pointIterator]->getHorizontalAxis() * frames);
             
             Point *initialPoint = new Point(coordinates[pointIterator].getHorizontalAxis(), coordinates[pointIterator].getVerticalAxis());
             Point *finalPoint = new Point(xAxisFinalPoint,yAxisFinalPoint);
 
-            double slope = ((double)finalPoint->getVerticalAxis() - (double)initialPoint->getVerticalAxis()) / 
-            ((double)finalPoint->getHorizontalAxis() - (double)initialPoint->getHorizontalAxis());
-
-            int xAxisMediumPoint = (initialPoint->getHorizontalAxis() + finalPoint->getHorizontalAxis()) / 2;
-            int yAxisMediumPoint = (initialPoint->getVerticalAxis() + finalPoint->getVerticalAxis()) / 2;
+            double xAxisMediumPoint = (initialPoint->getHorizontalAxis() + finalPoint->getHorizontalAxis()) / 2.0;
+            double yAxisMediumPoint = (initialPoint->getVerticalAxis() + finalPoint->getVerticalAxis()) / 2.0;
             Point *mediumPoint = new Point(xAxisMediumPoint, yAxisMediumPoint);
 
-            int squareSize = (getWidth() + 50 + getHeight() + 50) / 40;
-            double perpendicularSlope = 1 - slope;
-            double bFunction = mediumPoint->getVerticalAxis() - (perpendicularSlope * mediumPoint->getHorizontalAxis());
+            if(angle > 1) {
+                double slope = ((double)finalPoint->getVerticalAxis() - (double)initialPoint->getVerticalAxis()) / 
+                ((double)finalPoint->getHorizontalAxis() - (double)initialPoint->getHorizontalAxis());
+                
+                double perpendicularSlope = -1.0/slope;
+                double bFunction = mediumPoint->getVerticalAxis() - (perpendicularSlope * mediumPoint->getHorizontalAxis());
+                
+                newXAxis = mediumPoint->getHorizontalAxis() + xAxisOffset;
+                newYAxis = perpendicularSlope * newXAxis + bFunction;   // y = mx + b
+
+                cout << "y = " << perpendicularSlope << " * x + " << bFunction << endl;
+            } else {
+                newXAxis = mediumPoint->getHorizontalAxis();
+                newYAxis = mediumPoint->getVerticalAxis() + squareSize;
+            }
             
-            int newXAxis = mediumPoint->getHorizontalAxis() + squareSize;
-            int newYAxis = perpendicularSlope * newXAxis + bFunction;   // y = mx + b
-        
             Point *guideForCurve = new Point(newXAxis, newYAxis);
+
+            cout << initialPoint->getHorizontalAxis() << " " << initialPoint->getVerticalAxis() << endl;
+            cout << finalPoint->getHorizontalAxis() << " " << finalPoint->getVerticalAxis() << endl;
+            cout << guideForCurve->getHorizontalAxis() << " " << guideForCurve->getVerticalAxis() << endl;
 
             vector<Point*> pointTriplets;
             pointTriplets.emplace_back(initialPoint);
             pointTriplets.emplace_back(finalPoint);
             pointTriplets.emplace_back(guideForCurve);
-            distancesForCurvedRoute.emplace_back(pointTriplets);
+            distancesForCurvedRoute->emplace_back(pointTriplets);
         }
-        printPointsCurvedRoute(distancesForCurvedRoute);    // REMOVE LATER!
-        notify(docPointer, &distancesForCurvedRoute);
+        printPointsCurvedRoute(*distancesForCurvedRoute);    // REMOVE LATER!
+        notify(docPointer, distancesForCurvedRoute);
     }
 
     // For debug only
@@ -327,7 +338,7 @@ public:
         // vector<Point> *originalPointsPointer = (vector<Point>*)pCoordinates;
         // vector<Point> originalPoints = originalPointsPointer[0];
         // setCoordinates(originalPoints);
-        calculateQuadrantNormalCase();
+        calculateQuadrant();
     }
 
 };
