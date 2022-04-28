@@ -80,9 +80,75 @@ private:
         }
         if (angle == 0 || angle == (double)(M_PI/2))
             calculateRouteForSpecialCase();
-        else
-            calculateRouteForNormalCase();
+        else {
+            calculateRouteForNormalCase2();
+        }
     }
+
+    void calculateRouteForNormalCase2() {
+        cout << "quadrant = " << quadrant << endl;
+        int pointIterator = 0;
+        double partialAverageForXAxis = 0;
+        double partialAverageForYAxis = 0;
+        calculateRouteForNormalCaseAux(pointIterator, partialAverageForXAxis, partialAverageForYAxis);
+    }
+
+    Point* calculateRouteForNormalCaseAux(int pointIterator, int partialAverageForXAxis, int partialAverageForYAxis) {
+        if (pointIterator == coordinates.size()-1) { 
+            partialAverageForXAxis = partialAverageForXAxis/coordinates.size();
+            partialAverageForYAxis = partialAverageForYAxis/coordinates.size();
+
+            if(quadrant == 2 || quadrant == 3)
+                partialAverageForXAxis *= -1;
+            if(quadrant == 1 || quadrant == 2)
+                partialAverageForYAxis *= -1;
+        
+            cout << "average for x = " << partialAverageForXAxis << endl;
+            cout << "average for y = " << partialAverageForYAxis << endl;
+            return new Point(partialAverageForXAxis, partialAverageForYAxis);
+        }
+
+        Point currentPoint = coordinates[pointIterator];
+       
+        cout << "(" << currentPoint.getHorizontalAxis() << "," << currentPoint.getVerticalAxis() << ")" << endl;
+        
+        int xAxis,yAxis; 
+        double firstLeg,secondLeg,slope,linearConstant; // leg -> cateto
+     
+        xAxis = currentPoint.getHorizontalAxis();
+        yAxis = currentPoint.getVerticalAxis();
+
+        if (quadrant == 1 || quadrant == 4) {
+            firstLeg = canvasSize.getWidth() - xAxis;
+            secondLeg = tan(angle)*firstLeg;
+        } else {
+            firstLeg = xAxis;
+            secondLeg = tan(angle)*firstLeg;
+        }
+
+        if ((secondLeg > yAxis && (quadrant == 1 || quadrant == 2)) || 
+            (secondLeg + yAxis > canvasSize.getHeight() && (quadrant == 3 || quadrant == 4))) {
+            slope = (secondLeg)/(firstLeg);     
+            linearConstant = yAxis-(slope*xAxis);
+            if(quadrant == 1 || quadrant == 2) {
+                secondLeg = yAxis;
+                firstLeg = ((((yAxis*2)-linearConstant)/slope) - xAxis);
+            } else {
+                secondLeg = canvasSize.getHeight() - yAxis;
+                firstLeg = (((canvasSize.getHeight()-linearConstant)/slope) - xAxis);
+            }
+        }
+        
+        partialAverageForXAxis += firstLeg / frames;
+        partialAverageForYAxis += secondLeg / frames;
+        cout << "x = " << firstLeg / frames << endl;
+        cout << "y = " << secondLeg / frames << endl;
+        pointIterator++;
+        calculateRouteForNormalCaseAux(pointIterator, partialAverageForXAxis, partialAverageForYAxis);
+        return nullptr;
+    }
+
+// ------------------------------------------------------------------------------------------------------------
 
     void calculateRouteForSpecialCase() {
 
@@ -126,9 +192,9 @@ private:
     void calculateRouteForNormalCase() {        
         
         cout << "--- CASO NORMAL ---" << endl;
-        cout << "Frames = " << frames << endl;
-        cout << "Cuadrant = " << quadrant << endl;
-        cout << "Angle = " << angle << endl;
+        // cout << "Frames = " << frames << endl;
+        // cout << "Cuadrant = " << quadrant << endl;
+        // cout << "Angle = " << angle << endl;
         
         int xAxis,yAxis; 
         

@@ -46,7 +46,7 @@ public:
 
         points = pPoints;
 
-        TypeOfRoute typeOfRoute = chooseRandomTypeOfRoute();
+        TypeOfRoute typeOfRoute = TypeOfRoute::straightRoute;
 
         selector = new Selector(pColors);
         router = new Router(pAngle, pFrames, typeOfRoute);
