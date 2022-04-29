@@ -50,15 +50,15 @@ public:
 
         selector = new Selector(pColors);
         router = new Router(pAngle, pFrames, typeOfRoute);
-        generator = new Generator(typeOfRoute,pFrames,fileName);
+        generator = new Generator(typeOfRoute,pFrames,fileName,docPointer);
         animator = new Animator();
         
         selector->attach(animator); // animator observes selector
         router->attach(animator);   // animator observes router
 
         animator->attach(selector);     // selector observes animator
-        animator->attach(router);       // router observes animator
-        animator->attach(generator);    // generator observes animator
+        //animator->attach(router);       // router observes animator
+        //animator->attach(generator);    // generator observes animator
     }
 
     ~Administrator() {

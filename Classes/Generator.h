@@ -35,40 +35,33 @@ private:
 
     int frames;
     int processId;
-    bool keepRepetingConsumer;
-    string originalFileName;
+    int squareSize;
     TypeOfRoute route;
+    xml_node svgMaskGroup;
+    string originalFileName;
+    Resolution svgResolution;
+    xml_document nodeCreator;
     xml_document *docPointer;
-    void *distances;
-    queue<xml_document*> docs;
+    queue<xml_document*> producedFrames;
+    bool keepRepetingConsumer;
+    vector<Point*> *maskCoordinates;
+    vector<xml_node> *pathCollection;
+    vector<Point> *originalCoordinates;
 
-    Point beizerCurve(Point originPoint, Point middlePoint, Point lastPoint, double percentage) {
-        double xAxis = pow((1-percentage),2)*originPoint.getHorizontalAxis() + 
-                       2*(1-percentage)*percentage*middlePoint.getHorizontalAxis() + 
-                       pow(percentage,2)*lastPoint.getHorizontalAxis();
-
-        double yAxis = pow((1-percentage),2)*originPoint.getVerticalAxis() + 
-                       2*(1-percentage)*percentage*middlePoint.getVerticalAxis() + 
-                       pow(percentage,2)*lastPoint.getVerticalAxis();
-
-        cout << xAxis << " . " << yAxis << endl;
-
-        return Point(xAxis-originPoint.getHorizontalAxis(),yAxis-originPoint.getVerticalAxis());
-    }
-    
+    /*
     void makeFiles() {
         xml_node mainSvgNode = docPointer->child("svg").last_child();
         for(int i = 0; i < frames; i++) {
             xml_node_iterator svgIterator = mainSvgNode.begin();
             if(route == TypeOfRoute::straightRoute) {
-                for(Point *actual : *(vector<Point*>*)distances) {
-                    svgIterator->attribute("x").set_value(actual->getHorizontalAxis()*(i+1));
-                    svgIterator->attribute("y").set_value(actual->getVerticalAxis()*(i+1));
+                for(Point * current : *(vector<Point*>*)distances) {
+                    svgIterator->attribute("x").set_value( current->getHorizontalAxis()*(i+1));
+                    svgIterator->attribute("y").set_value( current->getVerticalAxis()*(i+1));
                     svgIterator++;
                 }
             } else {
-                for(vector<Point*> actual : *((vector<vector<Point*>>*)distances)) {
-                    Point newOffset = beizerCurve(*actual[0],*actual[2],*actual[1],(1.0/frames)*(i+1));
+                for(vector<Point*>  current : *((vector<vector<Point*>>*)distances)) {
+                    Point newOffset = beizerCurve(* current[0],* current[2],* current[1],(1.0/frames)*(i+1));
                     svgIterator->attribute("x").set_value(newOffset.getHorizontalAxis());
                     svgIterator->attribute("y").set_value(newOffset.getVerticalAxis());
                     svgIterator++;
@@ -76,19 +69,72 @@ private:
             }
             xml_document *copiedDoc = new xml_document();
             copiedDoc->reset(*docPointer);
-            docs.push(copiedDoc);
+            producedFrames.push(copiedDoc);
         }
         keepRepetingConsumer = false;
+    }*/
+
+    void createSVGMaskGroup() {
+        svgMaskGroup = nodeCreator.append_child("svg");
+
+        xml_node maskNode = svgMaskGroup.append_child("mask");
+        maskNode.append_attribute("id").set_value("maskForSvg");
+        for(Point currentPoint : *originalCoordinates) {
+            xml_node squaredMask = maskNode.append_child("rect");
+            squaredMask.append_attribute("x").set_value(currentPoint.getHorizontalAxis()-squareSize);
+            squaredMask.append_attribute("y").set_value(currentPoint.getVerticalAxis()-squareSize);
+            squaredMask.append_attribute("height").set_value(squareSize);
+            squaredMask.append_attribute("width").set_value(squareSize);
+        }
+
+        xml_node pathGroup = svgMaskGroup.append_child("g");
+        pathGroup.append_attribute("mask").set_value("url(#maskForSvg)");
+        for(xml_node currentPath : *pathCollection) {
+            pathGroup.append_copy(currentPath);
+        }
+    }
+
+    void createFrame(int pointIndex) {
+        if(svgMaskGroup.empty()) {
+            createSVGMaskGroup();
+        }
+        Point *currentPoint = (*maskCoordinates)[pointIndex];
+        xml_document *newFrame = new xml_document();
+        newFrame->reset(*docPointer);
+        xml_node copiedSVGMaskGroup = newFrame->append_copy(svgMaskGroup);
+        copiedSVGMaskGroup.append_attribute("x").set_value(currentPoint->getHorizontalAxis());
+        copiedSVGMaskGroup.append_attribute("y").set_value(currentPoint->getHorizontalAxis());
+        producedFrames.push(newFrame);
+    }
+
+    bool backtrackerProducer(int pointIndexTest, int lastSuccessfulIndex) {
+        Point *current = (*maskCoordinates)[pointIndexTest];
+        Point *lastSuccessful = (*maskCoordinates)[lastSuccessfulIndex];
+        double distance = current->getDistanceBetweenPoints(*lastSuccessful);
+
+        if(distance >= squareSize || pointIndexTest == 0) {
+            int lastSuccessfulIndex = pointIndexTest;
+            
+            createFrame(pointIndexTest);
+
+            for(int pointIndex = pointIndexTest + 1; pointIndex < maskCoordinates->size(); pointIndex++) {
+                if(backtrackerProducer(pointIndex,lastSuccessfulIndex)) {
+                    return true;
+                }
+            }
+            return true;
+        } else
+            return false;
     }
 
     void consumer() {
         int frameExported = 1;
         xml_document *extractedDoc;
-        while (keepRepetingConsumer || !docs.empty()) {
+        while (keepRepetingConsumer || !producedFrames.empty()) {
             sleep(1);
-            if(!docs.empty()) {
-                extractedDoc = docs.front();
-                docs.pop();
+            if(!producedFrames.empty()) {
+                extractedDoc = producedFrames.front();
+                producedFrames.pop();
                 string newFileName = originalFileName + "-" + to_string(frameExported) + ".svg";
                 ofstream *copyFile = new ofstream(newFileName,ofstream::trunc);
                 stringstream svgWritter;
@@ -108,7 +154,7 @@ public:
         processId = 2;
     }
 
-    Generator(TypeOfRoute pRoute, int pFrames, string pFileName) {
+    Generator(TypeOfRoute pRoute, int pFrames, string pFileName, xml_document *pDocPointer) {
         processId = 2;
         route = pRoute;
         frames = pFrames;
@@ -116,6 +162,9 @@ public:
         originalFileName = "./Result/" + originalFileName.substr(0,originalFileName.size()-4);\
         mkdir("./Result/");
         keepRepetingConsumer = true;
+        docPointer = pDocPointer;
+        svgResolution.setViewBoxResolution(docPointer->child("svg").attribute("viewBox").value(),false);
+        squareSize = (svgResolution.getWidth() + svgResolution.getHeight())/40;
     }
 
     ~Generator() {}
@@ -123,15 +172,15 @@ public:
     void work() {
         cout << "Working..." << endl;
         thread consumerThread(&Generator::consumer,this);
-        makeFiles();
+        backtrackerProducer(0,0);
         consumerThread.join();
         cout << "Animation complete" << endl;
     }
 
-    void update(xml_document* pDocPointer, void* pDistances) {
+    void update(void* pPathCollection, void* pDistances) {
         cout << "Generator started working" << endl;
-        distances = (vector<Point*>*) pDistances;
-        docPointer = (xml_document*) pDocPointer;
+        maskCoordinates = (vector<Point*>*) pDistances;
+        pathCollection = (vector<xml_node>*)pPathCollection;
         work();
     }
 

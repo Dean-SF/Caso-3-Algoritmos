@@ -39,8 +39,8 @@ private:
 
     // Debug only, remove for final release just to print the resulting vector
     void printDistances() {
-        for (Point *actual : distances) {
-             cout << "(" << actual->getHorizontalAxis() << "," << actual->getVerticalAxis() << ")" << endl;
+        for (Point * current : distances) {
+             cout << "(" <<  current->getHorizontalAxis() << "," <<  current->getVerticalAxis() << ")" << endl;
         }
     }
 
@@ -92,23 +92,23 @@ private:
         cout << "Cuadrant = " << quadrant << endl;
         cout << "Angle = " << angle << endl;
 
-        for(Point actual : coordinates) {
+        for(Point  current : coordinates) {
             int coordinate;
             switch (quadrant) {
                 case 1: // initial angle = 0
-                    coordinate = actual.getHorizontalAxis();
+                    coordinate =  current.getHorizontalAxis();
                     distances.emplace_back(new Point((canvasSize.getWidth() - coordinate)/frames,0));
                     break;
                 case 2: // initial angle = 90
-                    coordinate = actual.getVerticalAxis();
+                    coordinate =  current.getVerticalAxis();
                     distances.emplace_back(new Point(0,-(coordinate/frames)));
                     break;
                 case 3: // initial angle = 180
-                    coordinate = actual.getHorizontalAxis();
+                    coordinate =  current.getHorizontalAxis();
                     distances.emplace_back(new Point(-(coordinate/frames),0));
                     break;
                 case 4: // initial angle = 270
-                    coordinate = actual.getVerticalAxis();
+                    coordinate =  current.getVerticalAxis();
                     distances.emplace_back(new Point(0,(canvasSize.getHeight() - coordinate)/frames));
                     break;
                 default: 
@@ -134,9 +134,9 @@ private:
         
         double firstLeg,secondLeg,slope,linearConstant; // leg -> cateto
 
-        for(Point actual : coordinates) {
-            xAxis = actual.getHorizontalAxis();
-            yAxis = actual.getVerticalAxis();
+        for(Point  current : coordinates) {
+            xAxis =  current.getHorizontalAxis();
+            yAxis =  current.getVerticalAxis();
 
             if (quadrant == 1 || quadrant == 4) {
                 firstLeg = canvasSize.getWidth() - xAxis;
@@ -321,20 +321,20 @@ public:
     }
 
     // Notify the animator that Router finished it's job 
-    void notify(xml_document* pDocPointer, void* pCoordinates) {
+    void notify(void* pDocPointer, void* pCoordinates) {
         cout << "Router is done" << endl;
         cout << "--------------------------" << endl;
 
         animator->update(pDocPointer, pCoordinates);
     }
 
-    void update(xml_document* pDocPointer, void* pCoordinates) {
+    void update(void* pDocPointer, void* pCoordinates) {
         cout << "--------------------------" << endl;
         cout << "Router started working" << endl;
 
         coordinates = *(vector<Point>*) pCoordinates;
-        setDocPointer(pDocPointer);
-        canvasSize.setViewBoxResolution(pDocPointer->child("svg").attribute("viewBox").value(),true); // set canvas size;
+        setDocPointer((xml_document *)pDocPointer);
+        canvasSize.setViewBoxResolution(((xml_document *)pDocPointer)->child("svg").attribute("viewBox").value(),true); // set canvas size;
         // vector<Point> *originalPointsPointer = (vector<Point>*)pCoordinates;
         // vector<Point> originalPoints = originalPointsPointer[0];
         // setCoordinates(originalPoints);

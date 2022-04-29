@@ -1,6 +1,11 @@
 #ifndef POINT_H
 #define POINT_H
 
+#include <tgmath.h>
+
+using std::sqrt;
+using std::pow;
+
 class Point {
 private:
     double horizontalAxis;
@@ -14,6 +19,11 @@ public:
     Point(double pHorizontalAxis,double pVerticalAxis) {
         horizontalAxis = pHorizontalAxis;
         verticalAxis = pVerticalAxis;
+    }
+
+    double getDistanceBetweenPoints(Point pOtherPoint) {
+        return sqrt(pow(horizontalAxis-pOtherPoint.horizontalAxis,2)+
+                    pow(verticalAxis-pOtherPoint.verticalAxis,2));
     }
 
     double getHorizontalAxis() {
