@@ -37,7 +37,7 @@ int main() {
 
     string fileName = "svgcaso3.svg";
 
-    Administrator *admin = new Administrator(fileName, points, colors, angleTransformed, frames);
+    Administrator *admin = new Administrator(fileName, points, colors, angle, frames);
     
     admin->startAnimationProcess();
 

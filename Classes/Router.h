@@ -39,8 +39,8 @@ private:
 
     // Debug only, remove for final release just to print the resulting vector
     void printDistances() {
-        for (Point *actual : distances) {
-             cout << "(" << actual->getHorizontalAxis() << "," << actual->getVerticalAxis() << ")" << endl;
+        for (Point *current : distances) {
+             cout << "(" << current->getHorizontalAxis() << "," << current->getVerticalAxis() << ")" << endl;
         }
     }
 
@@ -78,23 +78,24 @@ private:
             default: 
                 break; 
         }
-        if (angle == 0 || angle == (double)(M_PI/2))
-            calculateRouteForSpecialCase();
-        else {
-            calculateRouteForNormalCase2();
-        }
+        calculateRoute();
     }
 
-    void calculateRouteForNormalCase2() {
+    void calculateRoute() {
         cout << "quadrant = " << quadrant << endl;
         int pointIterator = 0;
         double partialAverageForXAxis = 0;
         double partialAverageForYAxis = 0;
-        calculateRouteForNormalCaseAux(pointIterator, partialAverageForXAxis, partialAverageForYAxis);
+        if (angle == 0 || angle == (double)(M_PI/2))
+            //calculateRouteForSpecialCase(); para pruebas
+            calculateRouteForSpecialCaseAux(pointIterator, partialAverageForXAxis, partialAverageForYAxis);
+        else 
+            //calculateRouteForNormalCase(); para pruebas
+            calculateRouteForNormalCaseAux(pointIterator, partialAverageForXAxis, partialAverageForYAxis);
     }
 
-    Point* calculateRouteForNormalCaseAux(int pointIterator, int partialAverageForXAxis, int partialAverageForYAxis) {
-        if (pointIterator == coordinates.size()-1) { 
+    void* calculateRouteForNormalCaseAux(int pointIterator, int partialAverageForXAxis, int partialAverageForYAxis) {
+        if (pointIterator == coordinates.size()) { 
             partialAverageForXAxis = partialAverageForXAxis/coordinates.size();
             partialAverageForYAxis = partialAverageForYAxis/coordinates.size();
 
@@ -105,7 +106,17 @@ private:
         
             cout << "average for x = " << partialAverageForXAxis << endl;
             cout << "average for y = " << partialAverageForYAxis << endl;
-            return new Point(partialAverageForXAxis, partialAverageForYAxis);
+
+            if (typeOfRoute == TypeOfRoute::curvedRoute) {
+                calculateCurve(partialAverageForXAxis, partialAverageForYAxis);
+                return nullptr;
+            }
+            
+            for (int currentFrame = 1; currentFrame <= frames; currentFrame++) {
+                distances.emplace_back(new Point(partialAverageForXAxis * currentFrame, partialAverageForYAxis * currentFrame));
+            }
+            notify(docPointer, &distances);
+            return nullptr;
         }
 
         Point currentPoint = coordinates[pointIterator];
@@ -148,6 +159,113 @@ private:
         return nullptr;
     }
 
+    void* calculateRouteForSpecialCaseAux(int pointIterator, int partialAverageForXAxis, int partialAverageForYAxis) {
+        if (pointIterator == coordinates.size()) { 
+            partialAverageForXAxis = partialAverageForXAxis/coordinates.size();
+            partialAverageForYAxis = partialAverageForYAxis/coordinates.size();
+
+            if (quadrant == 2) // initial angle = 90
+                partialAverageForYAxis *= -1;
+            else if (quadrant == 3) // initial angle = 180
+                partialAverageForXAxis *= -1;
+    
+            cout << "average for x Special Case = " << partialAverageForXAxis << endl;
+            cout << "average for y Special Case = " << partialAverageForYAxis << endl;
+
+            if (typeOfRoute == TypeOfRoute::curvedRoute) {
+                calculateCurve(partialAverageForXAxis, partialAverageForYAxis);
+                return nullptr;
+            }
+            
+            for (int currentFrame = 1; currentFrame <= frames; currentFrame++) {
+                distances.emplace_back(new Point(partialAverageForXAxis * currentFrame, partialAverageForYAxis * currentFrame));
+            }
+            notify(docPointer, &distances);
+            return nullptr;
+        }
+
+        Point current = coordinates[pointIterator];
+
+        int coordinate;
+        switch (quadrant) {
+            case 1: // initial angle = 0
+                coordinate = current.getHorizontalAxis();
+                //distances.emplace_back(new Point((canvasSize.getWidth() - coordinate)/frames,0));
+                partialAverageForXAxis += (canvasSize.getWidth() - coordinate) / frames;
+                break;
+            case 2: // initial angle = 90
+                coordinate = current.getVerticalAxis();
+                cout << coordinate / frames << endl;
+                //distances.emplace_back(new Point(0,-(coordinate/frames)));
+                partialAverageForYAxis += coordinate / frames;
+                break;
+            case 3: // initial angle = 180
+                coordinate = current.getHorizontalAxis();
+                //distances.emplace_back(new Point(-(coordinate/frames),0));
+                partialAverageForXAxis += coordinate/frames;
+                break;
+            case 4: // initial angle = 270
+                coordinate = current.getVerticalAxis();
+                //distances.emplace_back(new Point(0,(canvasSize.getHeight() - coordinate)/frames));
+                partialAverageForYAxis += (canvasSize.getHeight() - coordinate) / frames;
+                break;
+            default: 
+                break;
+        }
+        pointIterator++;
+        calculateRouteForSpecialCaseAux(pointIterator, partialAverageForXAxis, partialAverageForYAxis);
+        return nullptr;
+    }
+
+    void calculateCurve(double pAverageForXAxis, double pAverageForYAxis) {
+        double newXAxis,newYAxis;
+        int squareSize = 3*(getWidth() + 50 + getHeight() + 50) / 40;
+        double xAxisOffset = squareSize * pow(((2.0*angle)/(double)M_PI),90.0/100.0);
+        
+        Point initialPoint(pAverageForXAxis, pAverageForYAxis);
+        Point finalPoint(pAverageForXAxis * frames, pAverageForYAxis * frames);
+
+        double xAxisMediumPoint = (initialPoint.getHorizontalAxis() + finalPoint.getHorizontalAxis()) / 2.0;
+        double yAxisMediumPoint = (initialPoint.getVerticalAxis() + finalPoint.getVerticalAxis()) / 2.0;
+        Point mediumPoint(xAxisMediumPoint, yAxisMediumPoint);
+
+        if (angle > 1) {
+            double slope = ((double)finalPoint.getVerticalAxis() - (double)initialPoint.getVerticalAxis()) / 
+            ((double)finalPoint.getHorizontalAxis() - (double)initialPoint.getHorizontalAxis());
+            
+            double perpendicularSlope = -1.0/slope;
+            double linearConstant = mediumPoint.getVerticalAxis() - (perpendicularSlope * mediumPoint.getHorizontalAxis());
+            
+            newXAxis = mediumPoint.getHorizontalAxis() + xAxisOffset;
+            newYAxis = perpendicularSlope * newXAxis + linearConstant;   // y = mx + b
+        } else {
+            newXAxis = mediumPoint.getHorizontalAxis();
+            newYAxis = mediumPoint.getVerticalAxis() + squareSize;
+        }
+        
+        Point guideForCurve(newXAxis, newYAxis);
+
+        for (int currentFrame = 0; currentFrame < frames; currentFrame++) {
+            distances.emplace_back(beizerCurve(initialPoint, guideForCurve, finalPoint, ((1.0/frames)*(currentFrame+1))));
+        }
+
+        notify(docPointer, &distances);
+    }
+
+    Point* beizerCurve(Point originPoint, Point middlePoint, Point lastPoint, double percentage) {
+        double xAxis = pow((1-percentage),2)*originPoint.getHorizontalAxis() + 
+                       2*(1-percentage)*percentage*middlePoint.getHorizontalAxis() + 
+                       pow(percentage,2)*lastPoint.getHorizontalAxis();
+
+        double yAxis = pow((1-percentage),2)*originPoint.getVerticalAxis() + 
+                       2*(1-percentage)*percentage*middlePoint.getVerticalAxis() + 
+                       pow(percentage,2)*lastPoint.getVerticalAxis();
+
+        cout << "(" << xAxis-originPoint.getHorizontalAxis() << " , " << yAxis-originPoint.getVerticalAxis() << ")" << endl;
+        Point *point = new Point(xAxis-originPoint.getHorizontalAxis(), yAxis-originPoint.getVerticalAxis());
+        return point;
+    }
+
 // ------------------------------------------------------------------------------------------------------------
 
     void calculateRouteForSpecialCase() {
@@ -158,23 +276,23 @@ private:
         cout << "Cuadrant = " << quadrant << endl;
         cout << "Angle = " << angle << endl;
 
-        for(Point actual : coordinates) {
+        for(Point current : coordinates) {
             int coordinate;
             switch (quadrant) {
                 case 1: // initial angle = 0
-                    coordinate = actual.getHorizontalAxis();
+                    coordinate = current.getHorizontalAxis();
                     distances.emplace_back(new Point((canvasSize.getWidth() - coordinate)/frames,0));
                     break;
                 case 2: // initial angle = 90
-                    coordinate = actual.getVerticalAxis();
+                    coordinate = current.getVerticalAxis();
                     distances.emplace_back(new Point(0,-(coordinate/frames)));
                     break;
                 case 3: // initial angle = 180
-                    coordinate = actual.getHorizontalAxis();
+                    coordinate = current.getHorizontalAxis();
                     distances.emplace_back(new Point(-(coordinate/frames),0));
                     break;
                 case 4: // initial angle = 270
-                    coordinate = actual.getVerticalAxis();
+                    coordinate = current.getVerticalAxis();
                     distances.emplace_back(new Point(0,(canvasSize.getHeight() - coordinate)/frames));
                     break;
                 default: 
@@ -200,9 +318,9 @@ private:
         
         double firstLeg,secondLeg,slope,linearConstant; // leg -> cateto
 
-        for(Point actual : coordinates) {
-            xAxis = actual.getHorizontalAxis();
-            yAxis = actual.getVerticalAxis();
+        for(Point current : coordinates) {
+            xAxis = current.getHorizontalAxis();
+            yAxis = current.getVerticalAxis();
 
             if (quadrant == 1 || quadrant == 4) {
                 firstLeg = canvasSize.getWidth() - xAxis;
@@ -246,6 +364,7 @@ private:
         int squareSize = 3*(getWidth() + 50 + getHeight() + 50) / 40;
         double xAxisOffset = squareSize * pow(((2.0*angle)/(double)M_PI),90.0/100.0);
         vector<vector<Point*>> *distancesForCurvedRoute = new vector<vector<Point*>>();
+        
         for (int pointIterator = 0; pointIterator < coordinates.size(); pointIterator++) {
             double yAxisFinalPoint = coordinates[pointIterator].getVerticalAxis() + distances[pointIterator]->getVerticalAxis() * frames;
 
