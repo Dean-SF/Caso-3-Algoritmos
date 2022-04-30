@@ -217,6 +217,20 @@ private:
         return nullptr;
     }
 
+    Point* beizerCurve(Point originPoint, Point middlePoint, Point lastPoint, double percentage) {
+        double xAxis = pow((1-percentage),2)*originPoint.getHorizontalAxis() + 
+                       2*(1-percentage)*percentage*middlePoint.getHorizontalAxis() + 
+                       pow(percentage,2)*lastPoint.getHorizontalAxis();
+
+        double yAxis = pow((1-percentage),2)*originPoint.getVerticalAxis() + 
+                       2*(1-percentage)*percentage*middlePoint.getVerticalAxis() + 
+                       pow(percentage,2)*lastPoint.getVerticalAxis();
+
+        cout << "(" << xAxis-originPoint.getHorizontalAxis() << " , " << yAxis-originPoint.getVerticalAxis() << ")" << endl;
+        Point *point = new Point(xAxis-originPoint.getHorizontalAxis(), yAxis-originPoint.getVerticalAxis());
+        return point;
+    }
+
     void calculateCurve(double pAverageForXAxis, double pAverageForYAxis) {
         double newXAxis,newYAxis;
         int squareSize = 3*(getWidth() + 50 + getHeight() + 50) / 40;
@@ -250,20 +264,6 @@ private:
         }
 
         notify(docPointer, &distances);
-    }
-
-    Point* beizerCurve(Point originPoint, Point middlePoint, Point lastPoint, double percentage) {
-        double xAxis = pow((1-percentage),2)*originPoint.getHorizontalAxis() + 
-                       2*(1-percentage)*percentage*middlePoint.getHorizontalAxis() + 
-                       pow(percentage,2)*lastPoint.getHorizontalAxis();
-
-        double yAxis = pow((1-percentage),2)*originPoint.getVerticalAxis() + 
-                       2*(1-percentage)*percentage*middlePoint.getVerticalAxis() + 
-                       pow(percentage,2)*lastPoint.getVerticalAxis();
-
-        cout << "(" << xAxis-originPoint.getHorizontalAxis() << " , " << yAxis-originPoint.getVerticalAxis() << ")" << endl;
-        Point *point = new Point(xAxis-originPoint.getHorizontalAxis(), yAxis-originPoint.getVerticalAxis());
-        return point;
     }
 
 // ------------------------------------------------------------------------------------------------------------
