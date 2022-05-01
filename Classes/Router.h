@@ -27,14 +27,15 @@ class Router : public Subject, public Observer {
 private:
     Observer* animator;
     TypeOfRoute typeOfRoute;
-    xml_document* docPointer;
     vector<Point*> distances; 
     vector<Point> coordinates; // coordinates from each mask->rect
+    vector<xml_node> *pathCollection;
+
     int processId;
     
-    Resolution canvasSize; 
+    Resolution *canvasSize; 
     double angle;
-    int frames;
+    double frames;
     int quadrant; 
 
     // Debug only, remove for final release just to print the resulting vector
@@ -94,7 +95,7 @@ private:
             calculateRouteForNormalCaseAux(pointIterator, partialAverageForXAxis, partialAverageForYAxis);
     }
 
-    void* calculateRouteForNormalCaseAux(int pointIterator, int partialAverageForXAxis, int partialAverageForYAxis) {
+    void calculateRouteForNormalCaseAux(int pointIterator, double partialAverageForXAxis, double partialAverageForYAxis) {
         if (pointIterator == coordinates.size()) { 
             partialAverageForXAxis = partialAverageForXAxis/coordinates.size();
             partialAverageForYAxis = partialAverageForYAxis/coordinates.size();
@@ -109,14 +110,14 @@ private:
 
             if (typeOfRoute == TypeOfRoute::curvedRoute) {
                 calculateCurve(partialAverageForXAxis, partialAverageForYAxis);
-                return nullptr;
+                return;
             }
             
             for (int currentFrame = 1; currentFrame <= frames; currentFrame++) {
                 distances.emplace_back(new Point(partialAverageForXAxis * currentFrame, partialAverageForYAxis * currentFrame));
             }
-            notify(docPointer, &distances);
-            return nullptr;
+            notify(pathCollection,&distances,canvasSize);
+            return;
         }
 
         Point currentPoint = coordinates[pointIterator];
@@ -130,7 +131,7 @@ private:
         yAxis = currentPoint.getVerticalAxis();
 
         if (quadrant == 1 || quadrant == 4) {
-            firstLeg = canvasSize.getWidth() - xAxis;
+            firstLeg = canvasSize->getWidth() - xAxis;
             secondLeg = tan(angle)*firstLeg;
         } else {
             firstLeg = xAxis;
@@ -138,15 +139,15 @@ private:
         }
 
         if ((secondLeg > yAxis && (quadrant == 1 || quadrant == 2)) || 
-            (secondLeg + yAxis > canvasSize.getHeight() && (quadrant == 3 || quadrant == 4))) {
+            (secondLeg + yAxis > canvasSize->getHeight() && (quadrant == 3 || quadrant == 4))) {
             slope = (secondLeg)/(firstLeg);     
             linearConstant = yAxis-(slope*xAxis);
             if(quadrant == 1 || quadrant == 2) {
                 secondLeg = yAxis;
                 firstLeg = ((((yAxis*2)-linearConstant)/slope) - xAxis);
             } else {
-                secondLeg = canvasSize.getHeight() - yAxis;
-                firstLeg = (((canvasSize.getHeight()-linearConstant)/slope) - xAxis);
+                secondLeg = canvasSize->getHeight() - yAxis;
+                firstLeg = (((canvasSize->getHeight()-linearConstant)/slope) - xAxis);
             }
         }
         
@@ -156,10 +157,10 @@ private:
         cout << "y = " << secondLeg / frames << endl;
         pointIterator++;
         calculateRouteForNormalCaseAux(pointIterator, partialAverageForXAxis, partialAverageForYAxis);
-        return nullptr;
+        return;
     }
 
-    void* calculateRouteForSpecialCaseAux(int pointIterator, int partialAverageForXAxis, int partialAverageForYAxis) {
+    void calculateRouteForSpecialCaseAux(int pointIterator, double partialAverageForXAxis, double partialAverageForYAxis) {
         if (pointIterator == coordinates.size()) { 
             partialAverageForXAxis = partialAverageForXAxis/coordinates.size();
             partialAverageForYAxis = partialAverageForYAxis/coordinates.size();
@@ -174,14 +175,14 @@ private:
 
             if (typeOfRoute == TypeOfRoute::curvedRoute) {
                 calculateCurve(partialAverageForXAxis, partialAverageForYAxis);
-                return nullptr;
+                return;
             }
             
             for (int currentFrame = 1; currentFrame <= frames; currentFrame++) {
                 distances.emplace_back(new Point(partialAverageForXAxis * currentFrame, partialAverageForYAxis * currentFrame));
             }
-            notify(docPointer, &distances);
-            return nullptr;
+            notify(pathCollection,&distances,canvasSize);
+            return;
         }
 
         Point current = coordinates[pointIterator];
@@ -190,8 +191,8 @@ private:
         switch (quadrant) {
             case 1: // initial angle = 0
                 coordinate = current.getHorizontalAxis();
-                //distances.emplace_back(new Point((canvasSize.getWidth() - coordinate)/frames,0));
-                partialAverageForXAxis += (canvasSize.getWidth() - coordinate) / frames;
+                //distances.emplace_back(new Point((canvasSize->getWidth() - coordinate)/frames,0));
+                partialAverageForXAxis += (canvasSize->getWidth() - coordinate) / frames;
                 break;
             case 2: // initial angle = 90
                 coordinate = current.getVerticalAxis();
@@ -206,15 +207,15 @@ private:
                 break;
             case 4: // initial angle = 270
                 coordinate = current.getVerticalAxis();
-                //distances.emplace_back(new Point(0,(canvasSize.getHeight() - coordinate)/frames));
-                partialAverageForYAxis += (canvasSize.getHeight() - coordinate) / frames;
+                //distances.emplace_back(new Point(0,(canvasSize->getHeight() - coordinate)/frames));
+                partialAverageForYAxis += (canvasSize->getHeight() - coordinate) / frames;
                 break;
             default: 
                 break;
         }
         pointIterator++;
         calculateRouteForSpecialCaseAux(pointIterator, partialAverageForXAxis, partialAverageForYAxis);
-        return nullptr;
+        return;
     }
 
     Point* beizerCurve(Point originPoint, Point middlePoint, Point lastPoint, double percentage) {
@@ -263,7 +264,7 @@ private:
             distances.emplace_back(beizerCurve(initialPoint, guideForCurve, finalPoint, ((1.0/frames)*(currentFrame+1))));
         }
 
-        notify(docPointer, &distances);
+        notify(pathCollection,&distances,canvasSize);
     }
 
 // ------------------------------------------------------------------------------------------------------------
@@ -281,7 +282,7 @@ private:
             switch (quadrant) {
                 case 1: // initial angle = 0
                     coordinate = current.getHorizontalAxis();
-                    distances.emplace_back(new Point((canvasSize.getWidth() - coordinate)/frames,0));
+                    distances.emplace_back(new Point((canvasSize->getWidth() - coordinate)/frames,0));
                     break;
                 case 2: // initial angle = 90
                     coordinate = current.getVerticalAxis();
@@ -293,7 +294,7 @@ private:
                     break;
                 case 4: // initial angle = 270
                     coordinate = current.getVerticalAxis();
-                    distances.emplace_back(new Point(0,(canvasSize.getHeight() - coordinate)/frames));
+                    distances.emplace_back(new Point(0,(canvasSize->getHeight() - coordinate)/frames));
                     break;
                 default: 
                     break;
@@ -304,7 +305,7 @@ private:
         if (getTypeOfRoute() == TypeOfRoute::curvedRoute) 
             calculateCurvedRoute();
         
-        notify(docPointer, &distances);
+        notify(pathCollection,&distances,canvasSize);;
     }
 
     void calculateRouteForNormalCase() {        
@@ -323,7 +324,7 @@ private:
             yAxis = current.getVerticalAxis();
 
             if (quadrant == 1 || quadrant == 4) {
-                firstLeg = canvasSize.getWidth() - xAxis;
+                firstLeg = canvasSize->getWidth() - xAxis;
                 secondLeg = tan(angle)*firstLeg;
             } else {
                 firstLeg = xAxis;
@@ -331,15 +332,15 @@ private:
             }
 
             if ((secondLeg > yAxis && (quadrant == 1 || quadrant == 2)) || 
-               (secondLeg + yAxis > canvasSize.getHeight() && (quadrant == 3 || quadrant == 4))) {
+               (secondLeg + yAxis > canvasSize->getHeight() && (quadrant == 3 || quadrant == 4))) {
                 slope = (secondLeg)/(firstLeg);     
                 linearConstant = yAxis-(slope*xAxis);
                 if(quadrant == 1 || quadrant == 2) {
                     secondLeg = yAxis;
                     firstLeg = ((((yAxis*2)-linearConstant)/slope) - xAxis);
                 } else {
-                    secondLeg = canvasSize.getHeight() - yAxis;
-                    firstLeg = (((canvasSize.getHeight()-linearConstant)/slope) - xAxis);
+                    secondLeg = canvasSize->getHeight() - yAxis;
+                    firstLeg = (((canvasSize->getHeight()-linearConstant)/slope) - xAxis);
                 }
             }
             
@@ -355,7 +356,7 @@ private:
         if (getTypeOfRoute() == TypeOfRoute::curvedRoute) 
             calculateCurvedRoute();
         
-        notify(docPointer, &distances);
+        notify(pathCollection,&distances,canvasSize);;
     }
 
 
@@ -406,7 +407,7 @@ private:
             distancesForCurvedRoute->emplace_back(pointTriplets);
         }
         printPointsCurvedRoute(*distancesForCurvedRoute);    // REMOVE LATER!
-        notify(docPointer, distancesForCurvedRoute);
+        notify(pathCollection,&distances,canvasSize);
     }
 
     // For debug only
@@ -426,17 +427,16 @@ public:
         angle = pAngle;
         frames = pFrames;
         typeOfRoute = pTypeOfRoute;
-        docPointer = nullptr;
-        
+ 
     }
     ~Router() {} 
 
     int getWidth() {
-        return canvasSize.getWidth();
+        return canvasSize->getWidth();
     }
 
     int getHeight() {
-        return canvasSize.getHeight();
+        return canvasSize->getHeight();
     }
 
     int getFrames() {
@@ -452,11 +452,11 @@ public:
     }
 
     void setWidth(int pWidth) {
-        canvasSize.setWidth(pWidth);    
+        canvasSize->setWidth(pWidth);    
     }
 
     void setHeight(int pHeight) {
-        canvasSize.setHeight(pHeight);
+        canvasSize->setHeight(pHeight);
     }
 
     void setAngle(double pAngle) {
@@ -483,14 +483,6 @@ public:
         coordinates = pCoordinates;
     }
 
-    xml_document* getDocPointer() {
-        return docPointer;
-    }
-
-    void setDocPointer(xml_document* pDocPointer) {
-        docPointer = pDocPointer;
-    }
-
     // Assign given pointer to an observer as the class' animator
     void attach(Observer* pAnimator) {
         animator = pAnimator;
@@ -506,20 +498,19 @@ public:
     }
 
     // Notify the animator that Router finished it's job 
-    void notify(xml_document* pDocPointer, void* pCoordinates) {
+    void notify(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
         cout << "Router is done" << endl;
         cout << "--------------------------" << endl;
 
-        animator->update(pDocPointer, pCoordinates);
+        animator->update(pPathCollection, pCoordinates, pCanvasSize);
     }
 
-    void update(xml_document* pDocPointer, void* pCoordinates) {
+    void update(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
         cout << "--------------------------" << endl;
         cout << "Router started working" << endl;
-
-        coordinates = *(vector<Point>*) pCoordinates;
-        setDocPointer(pDocPointer);
-        canvasSize.setViewBoxResolution(pDocPointer->child("svg").attribute("viewBox").value(),true); // set canvas size;
+        pathCollection = pPathCollection;
+        coordinates = *(vector<Point> *)pCoordinates;
+        canvasSize = pCanvasSize;
         // vector<Point> *originalPointsPointer = (vector<Point>*)pCoordinates;
         // vector<Point> originalPoints = originalPointsPointer[0];
         // setCoordinates(originalPoints);

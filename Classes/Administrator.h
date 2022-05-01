@@ -48,9 +48,9 @@ public:
 
         TypeOfRoute typeOfRoute = TypeOfRoute::straightRoute;
 
-        selector = new Selector(pColors);
+        selector = new Selector(pColors,docPointer);
         router = new Router(pAngle, pFrames, typeOfRoute);
-        generator = new Generator(typeOfRoute,pFrames,fileName);
+        generator = new Generator(typeOfRoute,pFrames,fileName,docPointer,&points);
         animator = new Animator();
         
         selector->attach(animator); // animator observes selector
@@ -70,7 +70,7 @@ public:
     }
 
     void startAnimationProcess() {
-        animator->notify(docPointer, &points);
+        animator->notify(nullptr, &points, nullptr);
     }
 
 };

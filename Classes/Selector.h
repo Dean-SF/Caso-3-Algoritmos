@@ -1,6 +1,7 @@
 #ifndef SELECTOR_H
 #define SELECTOR_H
 
+#include <regex>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -11,7 +12,7 @@
 #include "observerPattern.h"
 #include "../libraries/pugixml/pugixml.hpp"
 
-
+using std::stod;
 using std::find;
 using std::string;
 using std::vector;
@@ -23,6 +24,9 @@ using std::unordered_set;
 using pugi::xml_object_range;
 using pugi::xml_parse_result;
 using pugi::xml_node_iterator;
+
+using std::regex;
+using std::smatch;
 
 #include <iostream>
 using std::cout;
@@ -38,18 +42,21 @@ class Selector : public Subject, public Observer {
 private:
     Observer* animator;
     int processId;
-    int coordinateOffset;
     xml_document *svgFile;
-    xml_node mainSvgGroup;
-    xml_document nodeCreator;
-    Resolution svgResolution;
+    double coordinateOffset;
+    Point maxProximityCoords;
+    Point minProximityCoords;
+    Resolution canvasSize;
     vector<Point> *coordinates;
     unordered_set<string> colors;
+    vector<xml_node> *pathCollection;
+    
+
 
     /*
     Calculates the pointOffset depending on the square size 
     to put it on the center of a given point
-    */
+    
     void calculatePointOffset(int pSquareSize) {
         coordinateOffset = pSquareSize/2;
     }
@@ -57,7 +64,7 @@ private:
     /*
     Selects all the original SVG Shapes that the color matches with one
     on the 'colorList'
-    */
+    
     void selectShapes(xml_node pSvgNodeGroup) {
         xml_node_iterator iterator;
         xml_node mainSvgNode = svgFile->child("svg");
@@ -74,14 +81,14 @@ private:
     /*
     Creates a mask with a square, the sizes depends on the viewBox size of
     the SVG. The square is white so that everything on it is
-    */
+    
     void generateMask(xml_node pSvgNodeGroup) {
         xml_node newMask = pSvgNodeGroup.append_child("mask");
         newMask.append_attribute("id").set_value("punto");
 
         xml_node squareMask = newMask.append_child("rect");
 
-        int squareSize = (svgResolution.getWidth() + svgResolution.getHeight())/40;
+        int squareSize = (canvasSize.getWidth() + canvasSize.getHeight())/40;
         squareMask.append_attribute("width").set_value(squareSize);
         squareMask.append_attribute("height").set_value(squareSize);
         squareMask.append_attribute("x");
@@ -94,7 +101,7 @@ private:
     /*
     Generates all the data needed in the svg node created at the creation of the\
     class, so it can be use to complete the selection process
-    */
+    
     xml_node generateSvgNodeGroup() {
         xml_node svgNodeGroup = nodeCreator.append_child("svg");
 
@@ -111,7 +118,7 @@ private:
     mask and the shapes that corresponds with the given colors. Then the algorithm makes
     copies of the svg node in the main document, with the square mask in the position of
     each point given to the algorithm
-    */
+    
     void selectionAux(xml_node previousSvgNode, int pCoordsIndex) {
         if(pCoordsIndex >= coordinates->size()) {
             return;
@@ -147,15 +154,73 @@ private:
     void selection() {
         xml_node previousSvgNode;
         mainSvgGroup = svgFile->child("svg").append_child("svg");
-        svgResolution.setViewBoxResolution(svgFile->child("svg").attribute("viewBox").value(),false);
+        canvasSize.setViewBoxResolution(svgFile->child("svg").attribute("viewBox").value(),false);
         selectionAux(previousSvgNode, 0);
+    }*/
+    
+    void getProximityCoords() {
+        double maxXAxis = 0,maxYAxis = 0;
+        double minXAxis = canvasSize.getWidth();
+        double minYAxis = canvasSize.getHeight();
+        for(Point current : *coordinates) {
+            double currentXAxis = current.getHorizontalAxis();
+            double currentYAxis = current.getVerticalAxis();
+            if(currentXAxis > maxXAxis )
+                maxXAxis = current.getHorizontalAxis();
+            if(currentYAxis > maxYAxis)
+                maxYAxis = current.getVerticalAxis();
+            if(currentXAxis < minXAxis)
+                minXAxis = currentXAxis;
+            if(currentYAxis < minYAxis)
+                minYAxis = currentYAxis; 
+        }
+        
+        maxProximityCoords = Point(maxXAxis+coordinateOffset,maxYAxis+coordinateOffset);
+        minProximityCoords = Point(minXAxis-coordinateOffset,minYAxis-coordinateOffset);
+    }
+
+    bool checkIfValidPath(xml_node path) {
+        smatch match;
+
+        string pathDrawnValue = path.attribute("d").value();
+
+        regex yAxisRegex(",(\\d+(\\.\\d+)?)"); // match[1]
+        regex xAxisRegex("(\\d+(\\.\\d+)?)(?=,)"); // match[0]
+        
+        if(pathDrawnValue[0] != 'M')
+            return false; 
+
+        regex_search(pathDrawnValue,match,xAxisRegex);
+        double pathXAxis = stod(match[0]);
+        regex_search(pathDrawnValue,match,yAxisRegex);
+        double pathYAxis = stod(match[1]);
+
+        if(pathXAxis <= maxProximityCoords.getHorizontalAxis() && pathXAxis >= minProximityCoords.getHorizontalAxis() &&
+           pathYAxis <= maxProximityCoords.getVerticalAxis() && pathYAxis >= minProximityCoords.getVerticalAxis())
+            return true;
+        else
+            return false;
+    }
+
+    void selection() {
+        getProximityCoords();
+        xml_node_iterator iterator;
+        xml_node mainSvgNode = svgFile->child("svg");
+        for(iterator = mainSvgNode.begin(); iterator != mainSvgNode.end(); iterator++) {
+            string colorCode = iterator->attribute("fill").value();
+            if(colors.find(colorCode) != colors.end()) {
+                if(checkIfValidPath(*iterator))
+                    pathCollection->emplace_back(*iterator);
+            }
+        }
     }
 
 public:
-    Selector(vector<string> pColors) {
+    Selector(vector<string> pColors, xml_document *pDocPointer) {
         setColors(pColors);
-        coordinateOffset = 0;
+        pathCollection = new vector<xml_node>();
         processId = 0;
+        svgFile = pDocPointer;
     }
 
     void attach(Observer* pAnimator) {
@@ -173,11 +238,15 @@ public:
     }
 
     Resolution getResolution() {
-        return svgResolution;
+        return canvasSize;
     }
 
     int getProcessId() {
         return processId;
+    }
+
+     void setResolution() {
+        canvasSize.setViewBoxResolution(svgFile->child("svg").attribute("viewBox").value());
     }
 
     void setCoordinates(vector<Point> *pCoordinates) {
@@ -192,18 +261,18 @@ public:
 
     void work() {  
         cout << "Selector is working..." << endl;
+        coordinateOffset = (canvasSize.getWidth() + canvasSize.getHeight())/40;
+        setResolution();
         selection();
-        notify(svgFile, coordinates);
+        notify(pathCollection,coordinates,&canvasSize);
     }
 
-    void notify(xml_document* pDocPointer, void* pCoordinates) {
+    void notify(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
         cout << "Selector is done" << endl;
-        animator->update(pDocPointer, pCoordinates);
+        animator->update(pPathCollection,pCoordinates,pCanvasSize);
     }
 
-    void update(xml_document* pDocPointer, void* pCoordinates) {
-        cout << "test" << endl;
-        svgFile = pDocPointer;
+    void update(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
         coordinates = (vector<Point>*) pCoordinates;
         work();
     }

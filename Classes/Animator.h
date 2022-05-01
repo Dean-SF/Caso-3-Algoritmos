@@ -31,7 +31,7 @@ public:
         observers.remove(pNewObserver);
     }
 
-    void notify(xml_document* pDocPointer, void* pCoordinates) {
+    void notify(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
     /* 
        a. start process = -1
        b. Selector = 0 -> Router = 1
@@ -44,14 +44,14 @@ public:
         for (Observer* observer : observers) {
             if (observer->getProcessId() == stage) {
                 cout << observer->getProcessId() << endl;
-                observer->update(pDocPointer, pCoordinates);
+                observer->update(pPathCollection, pCoordinates, pCanvasSize);
                 break;
             }
         }
     }
 
-    void update(xml_document* pDocPointer, void* pCoordinates) {
-        notify(pDocPointer, pCoordinates);
+    void update(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
+        notify(pPathCollection, pCoordinates, pCanvasSize);
     }
 
     int getProcessId() {
