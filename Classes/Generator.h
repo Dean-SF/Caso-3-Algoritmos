@@ -39,7 +39,7 @@ private:
     TypeOfRoute route;
     xml_node svgMaskGroup;
     string originalFileName;
-    Resolution svgResolution;
+    Resolution *canvasSize;
     xml_document nodeCreator;
     xml_document *docPointer;
     queue<xml_document*> producedFrames;
@@ -85,6 +85,7 @@ private:
             squaredMask.append_attribute("y").set_value(currentPoint.getVerticalAxis()-squareSize);
             squaredMask.append_attribute("height").set_value(squareSize);
             squaredMask.append_attribute("width").set_value(squareSize);
+            squaredMask.append_attribute("fill").set_value("white");
         }
 
         xml_node pathGroup = svgMaskGroup.append_child("g");
@@ -95,15 +96,17 @@ private:
     }
 
     void createFrame(int pointIndex) {
+        
         if(svgMaskGroup.empty()) {
             createSVGMaskGroup();
         }
+        
         Point *currentPoint = (*maskCoordinates)[pointIndex];
         xml_document *newFrame = new xml_document();
         newFrame->reset(*docPointer);
-        xml_node copiedSVGMaskGroup = newFrame->append_copy(svgMaskGroup);
+        xml_node copiedSVGMaskGroup = newFrame->child("svg").append_copy(svgMaskGroup);
         copiedSVGMaskGroup.append_attribute("x").set_value(currentPoint->getHorizontalAxis());
-        copiedSVGMaskGroup.append_attribute("y").set_value(currentPoint->getHorizontalAxis());
+        copiedSVGMaskGroup.append_attribute("y").set_value(currentPoint->getVerticalAxis());
         producedFrames.push(newFrame);
     }
 
@@ -111,10 +114,8 @@ private:
         Point *current = (*maskCoordinates)[pointIndexTest];
         Point *lastSuccessful = (*maskCoordinates)[lastSuccessfulIndex];
         double distance = current->getDistanceBetweenPoints(*lastSuccessful);
-
         if(distance >= squareSize || pointIndexTest == 0) {
             int lastSuccessfulIndex = pointIndexTest;
-            
             createFrame(pointIndexTest);
 
             for(int pointIndex = pointIndexTest + 1; pointIndex < maskCoordinates->size(); pointIndex++) {
@@ -154,7 +155,7 @@ public:
         processId = 2;
     }
 
-    Generator(TypeOfRoute pRoute, int pFrames, string pFileName, xml_document *pDocPointer) {
+    Generator(TypeOfRoute pRoute, int pFrames, string pFileName, xml_document *pDocPointer, vector<Point> *pOriginalCoordinates) {
         processId = 2;
         route = pRoute;
         frames = pFrames;
@@ -163,8 +164,7 @@ public:
         mkdir("./Result/");
         keepRepetingConsumer = true;
         docPointer = pDocPointer;
-        svgResolution.setViewBoxResolution(docPointer->child("svg").attribute("viewBox").value(),false);
-        squareSize = (svgResolution.getWidth() + svgResolution.getHeight())/40;
+        originalCoordinates = pOriginalCoordinates;
     }
 
     ~Generator() {}
@@ -173,14 +173,17 @@ public:
         cout << "Working..." << endl;
         thread consumerThread(&Generator::consumer,this);
         backtrackerProducer(0,0);
+        keepRepetingConsumer = false;
         consumerThread.join();
         cout << "Animation complete" << endl;
     }
 
-    void update(void* pPathCollection, void* pDistances) {
+    void update(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
         cout << "Generator started working" << endl;
-        maskCoordinates = (vector<Point*>*) pDistances;
-        pathCollection = (vector<xml_node>*)pPathCollection;
+        maskCoordinates = (vector<Point*>*) pCoordinates;
+        pathCollection = pPathCollection;
+        canvasSize = pCanvasSize;
+        squareSize = (canvasSize->getWidth() + canvasSize->getHeight())/40;
         work();
     }
 

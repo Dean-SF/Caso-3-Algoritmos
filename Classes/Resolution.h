@@ -39,8 +39,8 @@ public:
     void setHeight(int pHeight) {
         height = pHeight;
     }
-    
-    void setViewBoxResolution(string pViewBox, bool offset) {
+
+    void setViewBoxResolution(string pViewBox) {
         stringstream stringManipulator(pViewBox);
         string extractedString;
 
@@ -51,11 +51,6 @@ public:
         width = stoi(extractedString);
         stringManipulator >> extractedString;
         height = stoi(extractedString);
-        if(offset) {
-            int offset = (width + height)/40;
-            width -= offset;
-            height -= offset;
-        }
     }
 };
 

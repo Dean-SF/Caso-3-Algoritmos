@@ -46,7 +46,7 @@ private:
     double coordinateOffset;
     Point maxProximityCoords;
     Point minProximityCoords;
-    Resolution svgResolution;
+    Resolution canvasSize;
     vector<Point> *coordinates;
     unordered_set<string> colors;
     vector<xml_node> *pathCollection;
@@ -88,7 +88,7 @@ private:
 
         xml_node squareMask = newMask.append_child("rect");
 
-        int squareSize = (svgResolution.getWidth() + svgResolution.getHeight())/40;
+        int squareSize = (canvasSize.getWidth() + canvasSize.getHeight())/40;
         squareMask.append_attribute("width").set_value(squareSize);
         squareMask.append_attribute("height").set_value(squareSize);
         squareMask.append_attribute("x");
@@ -154,14 +154,14 @@ private:
     void selection() {
         xml_node previousSvgNode;
         mainSvgGroup = svgFile->child("svg").append_child("svg");
-        svgResolution.setViewBoxResolution(svgFile->child("svg").attribute("viewBox").value(),false);
+        canvasSize.setViewBoxResolution(svgFile->child("svg").attribute("viewBox").value(),false);
         selectionAux(previousSvgNode, 0);
     }*/
     
     void getProximityCoords() {
         double maxXAxis = 0,maxYAxis = 0;
-        double minXAxis = svgResolution.getWidth();
-        double minYAxis = svgResolution.getHeight();
+        double minXAxis = canvasSize.getWidth();
+        double minYAxis = canvasSize.getHeight();
         for(Point current : *coordinates) {
             double currentXAxis = current.getHorizontalAxis();
             double currentYAxis = current.getVerticalAxis();
@@ -216,10 +216,11 @@ private:
     }
 
 public:
-    Selector(vector<string> pColors) {
+    Selector(vector<string> pColors, xml_document *pDocPointer) {
         setColors(pColors);
         pathCollection = new vector<xml_node>();
         processId = 0;
+        svgFile = pDocPointer;
     }
 
     void attach(Observer* pAnimator) {
@@ -237,11 +238,15 @@ public:
     }
 
     Resolution getResolution() {
-        return svgResolution;
+        return canvasSize;
     }
 
     int getProcessId() {
         return processId;
+    }
+
+     void setResolution() {
+        canvasSize.setViewBoxResolution(svgFile->child("svg").attribute("viewBox").value());
     }
 
     void setCoordinates(vector<Point> *pCoordinates) {
@@ -256,19 +261,18 @@ public:
 
     void work() {  
         cout << "Selector is working..." << endl;
-        svgResolution.setViewBoxResolution(svgFile->child("svg").attribute("viewBox").value(),false);
-        coordinateOffset = (svgResolution.getWidth() + svgResolution.getHeight())/40;
+        coordinateOffset = (canvasSize.getWidth() + canvasSize.getHeight())/40;
+        setResolution();
         selection();
-        notify(pathCollection, coordinates);
+        notify(pathCollection,coordinates,&canvasSize);
     }
 
-    void notify(void* pathCollection, void* pCoordinates) {
+    void notify(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
         cout << "Selector is done" << endl;
-        animator->update(pathCollection, pCoordinates);
+        animator->update(pPathCollection,pCoordinates,pCanvasSize);
     }
 
-    void update(void* pDocPointer, void* pCoordinates) {
-        svgFile = (xml_document *)pDocPointer;
+    void update(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
         coordinates = (vector<Point>*) pCoordinates;
         work();
     }
