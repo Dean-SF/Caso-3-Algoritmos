@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <iostream>
 #include "Point.h"
 #include <algorithm>
 #include "Resolution.h"
@@ -12,8 +13,12 @@
 #include "observerPattern.h"
 #include "../libraries/pugixml/pugixml.hpp"
 
+using std::cout;
+using std::endl;
 using std::stod;
 using std::find;
+using std::regex;
+using std::smatch;
 using std::string;
 using std::vector;
 using pugi::xml_node;
@@ -25,18 +30,16 @@ using pugi::xml_object_range;
 using pugi::xml_parse_result;
 using pugi::xml_node_iterator;
 
-using std::regex;
-using std::smatch;
-
-#include <iostream>
-using std::cout;
-using std::endl;
-
-/*
-Class used for the selecting process, creates a "SVG" Node with a "g" Node and a "mask" node.
-In the g node goes all the shapes from the original SVG with matching color. In the mask node goes
-a square in a given position. this svg node is copied by the amount of given points and changes the
-square in mask to the position of a point.
+/* Selector process - Greedy Algorithm
+N: Paths in a given SVG
+Stages: A Path
+Criterion:
+1. A path that has a color in the list given by the user, is selected as a candidate path
+2. Using the coordinates given by the user, get an aproximated area where every 
+"M" coordinate in a candiadate path (the first coordinates that appear after the M), that is in the area,
+is selected to save in a vector for the generator process.
+Local optimum: A path close to the given coordinates
+Global optimum: Vector of paths close to the given coordinates
 */
 class Selector : public Subject, public Observer {
 private:
@@ -51,113 +54,13 @@ private:
     unordered_set<string> colors;
     vector<xml_node> *pathCollection;
     
-
-
     /*
-    Calculates the pointOffset depending on the square size 
-    to put it on the center of a given point
-    
-    void calculatePointOffset(int pSquareSize) {
-        coordinateOffset = pSquareSize/2;
-    }
-
-    /*
-    Selects all the original SVG Shapes that the color matches with one
-    on the 'colorList'
-    
-    void selectShapes(xml_node pSvgNodeGroup) {
-        xml_node_iterator iterator;
-        xml_node mainSvgNode = svgFile->child("svg");
-        xml_node newSvgG = pSvgNodeGroup.append_child("g");
-        newSvgG.append_attribute("mask").set_value("url(#punto");
-        for(iterator = mainSvgNode.begin(); iterator != mainSvgNode.end(); iterator++) {
-            string colorCode = iterator->attribute("fill").value();
-            if(colors.find(colorCode) != colors.end()) {
-                newSvgG.append_copy(*iterator);
-            }
-        }
-    }
-
-    /*
-    Creates a mask with a square, the sizes depends on the viewBox size of
-    the SVG. The square is white so that everything on it is
-    
-    void generateMask(xml_node pSvgNodeGroup) {
-        xml_node newMask = pSvgNodeGroup.append_child("mask");
-        newMask.append_attribute("id").set_value("punto");
-
-        xml_node squareMask = newMask.append_child("rect");
-
-        int squareSize = (canvasSize.getWidth() + canvasSize.getHeight())/40;
-        squareMask.append_attribute("width").set_value(squareSize);
-        squareMask.append_attribute("height").set_value(squareSize);
-        squareMask.append_attribute("x");
-        squareMask.append_attribute("y");
-        squareMask.append_attribute("fill").set_value("white");
-
-        calculatePointOffset(squareSize);
-    }
-
-    /*
-    Generates all the data needed in the svg node created at the creation of the\
-    class, so it can be use to complete the selection process
-    
-    xml_node generateSvgNodeGroup() {
-        xml_node svgNodeGroup = nodeCreator.append_child("svg");
-
-        svgNodeGroup.append_attribute("x").set_value(0);
-        svgNodeGroup.append_attribute("y").set_value(0);
-        generateMask(svgNodeGroup);
-        selectShapes(svgNodeGroup);
-
-        return svgNodeGroup;
-    }
-
-    /*
-    Main algorithm for the selection process. Calls a function to create a svg node with a
-    mask and the shapes that corresponds with the given colors. Then the algorithm makes
-    copies of the svg node in the main document, with the square mask in the position of
-    each point given to the algorithm
-    
-    void selectionAux(xml_node previousSvgNode, int pCoordsIndex) {
-        if(pCoordsIndex >= coordinates->size()) {
-            return;
-        }
-        if(previousSvgNode.empty()) {
-            previousSvgNode = generateSvgNodeGroup();
-        }
-        xml_node newSvgNodeGroup = mainSvgGroup.append_copy(previousSvgNode);
-        xml_node SvgNodeGroupMask = newSvgNodeGroup.child("mask");
-        string maskId = SvgNodeGroupMask.attribute("id").value();
-        maskId = maskId.substr(0,5) + to_string(pCoordsIndex);
-        SvgNodeGroupMask.attribute("id").set_value(&maskId[0]);
-        xml_node SquareMask = SvgNodeGroupMask.child("rect");
-
-        Point *currentPoint = &((*coordinates)[pCoordsIndex]);
-        currentPoint->setHorizontalAxis(currentPoint->getHorizontalAxis() - coordinateOffset);
-        currentPoint->setVerticalAxis(currentPoint->getVerticalAxis() - coordinateOffset);
-
-        SquareMask.attribute("x").set_value(currentPoint->getHorizontalAxis());
-        SquareMask.attribute("y").set_value(currentPoint->getVerticalAxis());
-        
-
-        xml_node gNodeSvg = newSvgNodeGroup.child("g");
-        maskId = gNodeSvg.attribute("mask").value();
-        maskId = maskId.substr(0,10) + to_string(pCoordsIndex) + string(")");
-        gNodeSvg.attribute("mask").set_value(&maskId[0]);
-
-        pCoordsIndex++;
-
-        selectionAux(newSvgNodeGroup,pCoordsIndex);
-    }
-
-    void selection() {
-        xml_node previousSvgNode;
-        mainSvgGroup = svgFile->child("svg").append_child("svg");
-        canvasSize.setViewBoxResolution(svgFile->child("svg").attribute("viewBox").value(),false);
-        selectionAux(previousSvgNode, 0);
-    }*/
-    
+    This method calculates the diagonal coordinates of a rectangular
+    area, where every path inside of it is consider as a path close to
+    the coordinates given by the user.
+    Time Complexity: This fuction loops through all of the user given points
+    onces, without any nested cycles, in conclusion, is O(n) (linear)
+    */
     void getProximityCoords() {
         double maxXAxis = 0,maxYAxis = 0;
         double minXAxis = canvasSize.getWidth();
@@ -178,6 +81,13 @@ private:
         maxProximityCoords = Point(maxXAxis+coordinateOffset,maxYAxis+coordinateOffset);
         minProximityCoords = Point(minXAxis-coordinateOffset,minYAxis-coordinateOffset);
     }
+
+    /*
+    This method verifies if a path is in the area calculated in the
+    "getProximityCoords()" method.
+    Time Complexity: We could said that this method is O(C) (Constant time) because
+    of the lack of any cycles.
+    */
 
     bool checkIfValidPath(xml_node path) {
         smatch match;
@@ -202,6 +112,14 @@ private:
             return false;
     }
 
+    /*
+    This method is in charge of the whole selection process. It calls "getProximityCoords()"
+    once, and calls "checkIfValidPath()" multiple times to verify if a path is valid for selection.
+    Time complexity: We could say that from the first function call we get an O(n) and then we loop through
+    all the available paths which is O(n) because the checks of color and position in the path are constant.
+    For instance we hace an O(n) + O(n), two independent loops with linear complexity, which makes the union
+    of both, O(n) (linear).
+    */
     void selection() {
         getProximityCoords();
         xml_node_iterator iterator;
@@ -214,6 +132,12 @@ private:
             }
         }
     }
+
+    /*
+    For my final analysis, I conclude that the selection process has a
+    time complexity of "O(n)" (linear), because the union of all the methods
+    make so that there is no nested cycle that can change its complexity
+    */
 
 public:
     Selector(vector<string> pColors, xml_document *pDocPointer) {
