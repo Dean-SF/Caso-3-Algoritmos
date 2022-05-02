@@ -25,7 +25,7 @@ using std::stringstream;
 N: Coordinates given by the user.
 Memorization: It memorizes the previous partial sum.
 Stages: Each point given by the user.
-Local optimum: The ideal distance that a point has to move per frame.
+Local optimum: The ideal distance that the mask has to move per frame.
 Global optimum: Vector of points where the mask is going to move.
 */
 
@@ -187,7 +187,9 @@ private:
                 calculateCurve(partialAverageForXAxis, partialAverageForYAxis); //In this function we'll get the global optimum
                 return;
             }
-            // Process if the given type of route is straight. Get the global optimum
+
+            // Process if the given type of route is straight. Get the global optimum.
+            // This process is executed once after the main recursive cycle. Its not a nested loop
             for (int currentFrame = 1; currentFrame <= frames; currentFrame++) {
                 distances.emplace_back(new Point(partialAverageForXAxis * currentFrame, partialAverageForYAxis * currentFrame));
             }
@@ -247,7 +249,7 @@ private:
     This calculates the global optimum based on the local optimums produced by the calculateRouteForSpecialCaseAux or
     the calculateRouteForNormalCaseAux function.
     The  global optimum is the vector of points where the mask is going to move.
-    O(n): It depends on the points given by the user.
+    O(n): It depends on the amount of frames given by the user.
     */
     void calculateCurve(double pAverageForXAxis, double pAverageForYAxis) {
         double newXAxis, newYAxis;
@@ -285,6 +287,35 @@ private:
         }
         notify(pathCollection,&distances,canvasSize);
     }
+
+    /*
+    Each function have it's own time complexity described in a comment.
+    for the full algorithm we can make the next analysis:
+    calculateQuadrant() -> First executed to initialize the algorithm, its instructions are always the same
+                           and always executed, we can conclude it is constant time O(C)
+
+        calculateRoute() -> Second executed fuction, its instructions are always the same without
+                            cycles, we can conclude it is constant time O(C)
+
+            From the last fuction, we have two other functions to be executed
+            calculateRouteForNormalCaseAux() or calculateRouteForNormalCaseAux() -> both have diferent instruction, but both loop through the
+                                                                                    same "vector<Point>", if the route is straight, both have
+                                                                                    a for loop to create all the coordinates, but they are NOT
+                                                                                    nested loops, for instance we can conclude it has a time
+                                                                                    complexity of O(n) + O(n) because of two separated loops
+                                                                                    running one after another so the time complexity for worst
+                                                                                    case scenario is O(n).
+            
+                From the last funtion we have one final function to execute, in case of a Curve Route we execute another function
+                instead of the for loop describe in the last two functions:
+                calculateCurve(): -> this funtion just makes some extra steps and then executes a similar for loop ( with O(N) ) to the last two functions
+                                     but executing another function in each loop iteration:
+                    
+                    beizerCurve() -> its just a formula, and its time complexity is O(C), constant time.
+
+    In conclution we have in the WORST CASE SCENARIO some formula like: f(n)= O(C) + O(C) + O(n) + O(n) + O(n)*O(C)
+    we can conclude that in worse case we have a complexity of O(n), in other words, linear.
+    */
 
 public:
     Router(double pAngle, int pFrames, TypeOfRoute pTypeOfRoute) {
