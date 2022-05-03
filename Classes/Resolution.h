@@ -7,6 +7,10 @@
 using std::stringstream;
 using std::string;
 
+
+/*
+This class is in charge of managing the SVG resolution
+*/
 class Resolution {
 private:
     int width;
@@ -40,6 +44,7 @@ public:
         height = pHeight;
     }
 
+    // Gets the resolution given the viewBox string
     void setViewBoxResolution(string pViewBox) {
         stringstream stringManipulator(pViewBox);
         string extractedString;

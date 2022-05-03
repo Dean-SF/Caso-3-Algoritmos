@@ -6,24 +6,25 @@
 using std::sqrt;
 using std::pow;
 
+
+/*
+This clase is made to store "x" and "y" coordinates
+*/
 class Point {
 private:
-    double horizontalAxis;
     double verticalAxis;
+    double horizontalAxis;
 public:
+
+    // Default constructor
     Point() {
-        horizontalAxis = 0;
         verticalAxis = 0;
+        horizontalAxis = 0;
     }
 
-    Point(double pHorizontalAxis,double pVerticalAxis) {
-        horizontalAxis = pHorizontalAxis;
+    Point(double pVerticalAxis, double pHorizontalAxis) {
         verticalAxis = pVerticalAxis;
-    }
-
-    double getDistanceBetweenPoints(Point pOtherPoint) {
-        return sqrt(pow(horizontalAxis-pOtherPoint.horizontalAxis,2)+
-                    pow(verticalAxis-pOtherPoint.verticalAxis,2));
+        horizontalAxis = pHorizontalAxis;
     }
 
     double getHorizontalAxis() {
@@ -41,7 +42,12 @@ public:
     void setVerticalAxis(double pVerticalAxis) {
         verticalAxis = pVerticalAxis;
     }
-
+    
+    // given a point, calculates the distance between the two
+    double getDistanceBetweenPoints(Point pOtherPoint) {
+        return sqrt(pow(horizontalAxis-pOtherPoint.horizontalAxis,2)+
+                    pow(verticalAxis-pOtherPoint.verticalAxis,2));
+    }
 };
 
 

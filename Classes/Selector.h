@@ -140,11 +140,21 @@ private:
     */
 
 public:
-    Selector(vector<string> pColors, xml_document *pDocPointer) {
-        setColors(pColors);
-        pathCollection = new vector<xml_node>();
+    Selector() {
         processId = 0;
+        svgFile = nullptr;
+        coordinateOffset = 0;
+        coordinates = nullptr;
+        pathCollection = new vector<xml_node>();
+    }
+
+    Selector(vector<string> pColors, xml_document *pDocPointer) {
+        processId = 0;
+        setColors(pColors);
+        coordinateOffset = 0;
+        coordinates = nullptr;
         svgFile = pDocPointer;
+        pathCollection = new vector<xml_node>();
     }
 
     void attach(Observer* pAnimator) {
@@ -169,7 +179,7 @@ public:
         return processId;
     }
 
-     void setResolution() {
+    void setResolution() {
         canvasSize.setViewBoxResolution(svgFile->child("svg").attribute("viewBox").value());
     }
 

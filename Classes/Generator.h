@@ -30,6 +30,16 @@ using pugi::xml_document;
 using pugi::xml_node_iterator;
 
 
+/* Generator Process - Backtracking
+N: Coordinates from router (equal to the amount of frames)
+
+Solution Vector: Every posible frame in each coordinate calculated by the router
+
+How to determine if a solution is valid: before generating a frame, we compare the last
+used coordinate to generate a frame, and the next coordinates until we get a valid distance
+between the two coordinates to generate the frames
+
+*/
 class Generator : public Observer {
 private:
 
@@ -38,42 +48,23 @@ private:
     int squareSize;
     TypeOfRoute route;
     xml_node svgMaskGroup;
-    string originalFileName;
     Resolution *canvasSize;
+    string originalFileName;
     xml_document nodeCreator;
     xml_document *docPointer;
-    queue<xml_document*> producedFrames;
     bool keepRepetingConsumer;
     vector<Point*> *maskCoordinates;
     vector<xml_node> *pathCollection;
     vector<Point> *originalCoordinates;
+    queue<xml_document*> producedFrames;
 
     /*
-    void makeFiles() {
-        xml_node mainSvgNode = docPointer->child("svg").last_child();
-        for(int i = 0; i < frames; i++) {
-            xml_node_iterator svgIterator = mainSvgNode.begin();
-            if(route == TypeOfRoute::straightRoute) {
-                for(Point * current : *(vector<Point*>*)distances) {
-                    svgIterator->attribute("x").set_value( current->getHorizontalAxis()*(i+1));
-                    svgIterator->attribute("y").set_value( current->getVerticalAxis()*(i+1));
-                    svgIterator++;
-                }
-            } else {
-                for(vector<Point*>  current : *((vector<vector<Point*>>*)distances)) {
-                    Point newOffset = beizerCurve(* current[0],* current[2],* current[1],(1.0/frames)*(i+1));
-                    svgIterator->attribute("x").set_value(newOffset.getHorizontalAxis());
-                    svgIterator->attribute("y").set_value(newOffset.getVerticalAxis());
-                    svgIterator++;
-                }
-            }
-            xml_document *copiedDoc = new xml_document();
-            copiedDoc->reset(*docPointer);
-            producedFrames.push(copiedDoc);
-        }
-        keepRepetingConsumer = false;
-    }*/
-
+    This function creates a "easy to move" group of paths and mask which will be
+    copied multiple times so we dont recalculate it.
+    Time Complexity: we have two cycles with different sizes. They arent nested
+    so we can conclude we have a formula like f(n) = O(n) + O(n) + O(C).
+    Considering only the worse case, we have a O(n) (linear) complexity
+    */
     void createSVGMaskGroup() {
         svgMaskGroup = nodeCreator.append_child("svg");
 
@@ -95,6 +86,14 @@ private:
         }
     }
 
+    /*
+    This function is used to generate a frame. it's called multiple
+    times, but only once it calls the function "createSVGMaskGroup()".
+    Time Complexity: the first time we call this function it will have a time
+    complexity of O(n) (linear) because of the funtion "createSVGMaskGroup()"
+    being linear. But every other time we call this funtion we have a 
+    O(C) (constant) time complexity because of the lack of cycles
+    */
     void createFrame(int pointIndex) {
         
         if(svgMaskGroup.empty()) {
@@ -110,6 +109,19 @@ private:
         producedFrames.push(newFrame);
     }
 
+    /*
+    This recursive function is the main backtracking generation process.
+    for each successful frame, it search the next successful frame.
+
+    Time complexity: This function being recursive, is like a cycle.
+    and it will loop through all the coordinates calculated by the router
+    once, including the for loop in it. so, considering the for loop is what
+    makes possible the recursive calls, and is setup in a way, only once we
+    go through a coordiante, we can considere the time complexity as O(n) (linear).
+    We execute multiple times the function "createFrame()" but only the first time it runs
+    is O(n), the rest is O(C), so it doesnt make it O(n^2). In conclusion we can say
+    that this algorithm is as a whole, O(n) (linear) complexity
+    */
     bool backtrackerProducer(int pointIndexTest, int lastSuccessfulIndex) {
         Point *current = (*maskCoordinates)[pointIndexTest];
         Point *lastSuccessful = (*maskCoordinates)[lastSuccessfulIndex];
@@ -117,7 +129,6 @@ private:
         if(distance >= squareSize || pointIndexTest == 0) {
             int lastSuccessfulIndex = pointIndexTest;
             createFrame(pointIndexTest);
-
             for(int pointIndex = pointIndexTest + 1; pointIndex < maskCoordinates->size(); pointIndex++) {
                 if(backtrackerProducer(pointIndex,lastSuccessfulIndex)) {
                     return true;
@@ -128,6 +139,12 @@ private:
             return false;
     }
 
+    /*
+    This function is in charge of writting to disk the files produce by the "backtrackerProducer()".
+    It's time complexity is no really necessary. It's a infinite while loop that stops when
+    "KeepRepetingConsumer" is false and "produceFrames.empty()" is true. It's executed in a different
+    thread besides the main thread, and will write the files at the same time they are created.
+    */
     void consumer() {
         int frameExported = 1;
         xml_document *extractedDoc;
@@ -149,25 +166,51 @@ private:
             }
         }
     }
+    
+    /*
+    In the "backtrackerProducer()" we concluded that the time complexity of the whole algorithm is linear.
+    We dont take consumer into account because we can consider it as the same instructions being repeated 
+    the same amount of times as there are files to be written. If we didn't need to include a Producer-Consumer
+    Pattern, the same instructions executed when writting a file created in "backtrackerProducer()" would be 
+    executed each time we created a frame, instead of adding it to a queue. So we can say that's constant time.
+    In conclusion we could say, the algorithm including the consumer, would be, linear complexity ( O(n) )
+    */
 
 public:
     Generator() {
         processId = 2;
+        frames = 0;
+        mkdir("./Result/");
+        docPointer = nullptr;
+        route = straightRoute;
+        originalFileName = "./Result/null";
+        keepRepetingConsumer = true;
+        originalCoordinates = nullptr;
     }
 
     Generator(TypeOfRoute pRoute, int pFrames, string pFileName, xml_document *pDocPointer, vector<Point> *pOriginalCoordinates) {
         processId = 2;
         route = pRoute;
         frames = pFrames;
-        originalFileName = pFileName;
-        originalFileName = "./Result/" + originalFileName.substr(0,originalFileName.size()-4);\
         mkdir("./Result/");
-        keepRepetingConsumer = true;
         docPointer = pDocPointer;
+        keepRepetingConsumer = true;
+        originalFileName = pFileName;
         originalCoordinates = pOriginalCoordinates;
+        originalFileName = "./Result/" + originalFileName.substr(0,originalFileName.size()-4);
     }
 
-    ~Generator() {}
+    ~Generator() {
+        delete canvasSize;
+        delete docPointer;
+        delete maskCoordinates;
+        delete pathCollection;
+        delete originalCoordinates;
+    }
+
+    int getProcessId() {
+        return processId;
+    }
 
     void work() {
         cout << "Working..." << endl;
@@ -180,15 +223,11 @@ public:
 
     void update(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
         cout << "Generator started working" << endl;
-        maskCoordinates = (vector<Point*>*) pCoordinates;
-        pathCollection = pPathCollection;
         canvasSize = pCanvasSize;
+        pathCollection = pPathCollection;
+        maskCoordinates = (vector<Point*>*) pCoordinates;
         squareSize = (canvasSize->getWidth() + canvasSize->getHeight())/40;
         work();
-    }
-
-    int getProcessId() {
-        return processId;
     }
 
 };
