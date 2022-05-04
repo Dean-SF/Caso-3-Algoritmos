@@ -1,23 +1,24 @@
 #ifndef ADMINISTRATOR_H
 #define ADMINISTRATOR_H
 
-#include "Animator.h"
-#include "TypeOfRoute.h"
-#include "Selector.h"
-#include "Router.h"
-#include "Generator.h"
 #include "Point.h"
-#include "../libraries/pugixml/pugixml.hpp"
+#include "Router.h"
+#include "Animator.h"
+#include "Selector.h"
+#include "Generator.h"
+#include "TypeOfRoute.h"
 #include <string>
 #include <random>
-#include <iostream>
 #include <time.h>
+#include <iostream>
+#include "../libraries/pugixml/pugixml.hpp"
 
 using namespace pugi;
 using std::rand;
 using std::cout;
 using std::endl;
 
+// This class handles the initialization of the Animator, Selector, Router and Generator 
 class Administrator {
 private:
     Animator *animator;
@@ -46,11 +47,11 @@ public:
 
         points = pPoints;
 
-        TypeOfRoute typeOfRoute = TypeOfRoute::straightRoute;
+        TypeOfRoute typeOfRoute = chooseRandomTypeOfRoute();
 
         selector = new Selector(pColors,docPointer);
         router = new Router(pAngle, pFrames, typeOfRoute);
-        generator = new Generator(typeOfRoute,pFrames,fileName,docPointer,&points);
+        generator = new Generator(typeOfRoute, pFrames, fileName, docPointer, &points);
         animator = new Animator();
         
         selector->attach(animator); // animator observes selector
@@ -70,7 +71,7 @@ public:
     }
 
     void startAnimationProcess() {
-        animator->notify(nullptr, &points, nullptr);
+        animator->notify(nullptr, &points, nullptr);    // animator starts the animation process
     }
 
 };

@@ -8,6 +8,7 @@
 using std::vector;
 using pugi::xml_node;
 
+// This abstract class observes a subject and it gets notifications from that subject.
 class Observer {
 public:
   virtual ~Observer(){};
@@ -15,6 +16,7 @@ public:
   virtual int getProcessId() = 0;
 };
 
+// This abstract class notifies its observers when needed
 class Subject {
 public:
   virtual ~Subject(){};
