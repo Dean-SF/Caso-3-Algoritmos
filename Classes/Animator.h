@@ -11,6 +11,9 @@ using std::endl;
 using std::list;
 using namespace pugi;
 
+/* This class is a subject and an observer, so it handles the updates and the notifications that come
+from the classes Selector, Router and Generator.  
+*/
 class Animator : public Subject, public Observer {
 private:
     list<Observer*> observers;
@@ -50,6 +53,10 @@ public:
         }
     }
 
+    /* When Selector or Router notify Animator that they have finished, this function is called inside of their
+    respective notify(). This means that the next process can start, which is equivalent to the notification from
+    Animator to its observers. For that reason we are calling notify() when we have to update.
+    */
     void update(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
         notify(pPathCollection, pCoordinates, pCanvasSize);
     }

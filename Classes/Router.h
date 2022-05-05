@@ -14,6 +14,8 @@
 #include "TypeOfRoute.h"
 #include "ObserverPattern.h"
 
+using std::cout;
+using std::endl;
 using std::list;
 using std::stoi;
 using std::string;
@@ -289,7 +291,7 @@ private:
     }
 
     /*
-    Each function have it's own time complexity described in a comment.
+    Each function has it's own time complexity described in a comment.
     for the full algorithm we can make the next analysis:
     calculateQuadrant() -> First executed to initialize the algorithm, its instructions are always the same
                            and always executed, we can conclude it is constant time O(C)
@@ -298,7 +300,7 @@ private:
                             cycles, we can conclude it is constant time O(C)
 
             From the last fuction, we have two other functions to be executed
-            calculateRouteForNormalCaseAux() or calculateRouteForNormalCaseAux() -> both have diferent instruction, but both loop through the
+            calculateRouteForNormalCaseAux() or calculateRouteForNormalCaseAux() -> both have diferent instructions, but both loop through the
                                                                                     same "vector<Point>", if the route is straight, both have
                                                                                     a for loop to create all the coordinates, but they are NOT
                                                                                     nested loops, for instance we can conclude it has a time
@@ -313,7 +315,7 @@ private:
                     
                     beizerCurve() -> its just a formula, and its time complexity is O(C), constant time.
 
-    In conclution we have in the WORST CASE SCENARIO some formula like: f(n)= O(C) + O(C) + O(n) + O(n) + O(n)*O(C)
+    In conclution we have in the WORST CASE SCENARIO some formula like: f(n)= O(C) + O(C) + O(n) + O(n) + O(n) * O(C)
     we can conclude that in worse case we have a complexity of O(n), in other words, linear.
     */
 
@@ -395,15 +397,15 @@ public:
 
     // Notify the animator that Router finished it's job 
     void notify(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
-        cout << "Router is done" << endl;
+        cout << "Routing process finished" << endl;
         cout << "--------------------------" << endl;
-
         animator->update(pPathCollection, pCoordinates, pCanvasSize);
     }
+
     // This is executed by the Animator when it notifies that the Selector finished it's job
     void update(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
         cout << "--------------------------" << endl;
-        cout << "Router started working" << endl;
+        cout << "Routing process started" << endl;
         pathCollection = pPathCollection;
         coordinates = *(vector<Point> *)pCoordinates;
         canvasSize = pCanvasSize;
