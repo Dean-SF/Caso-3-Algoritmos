@@ -2,5 +2,5 @@
 Newsvg.svg
 .vscode/
 *.o
-./Support/mainDePrueba/Result/
-./Result/
+Support/mainDePrueba/Result/
+Result/
