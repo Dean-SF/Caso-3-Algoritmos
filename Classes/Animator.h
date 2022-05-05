@@ -1,15 +1,13 @@
 #ifndef ANIMATOR_H
 #define ANIMATOR_H
 
-#include "ObserverPattern.h"
-#include <iostream>
 #include <list>
-#include <vector>
+#include <iostream>
+#include "ObserverPattern.h"
 
 using std::cout;
 using std::endl;
 using std::list;
-using namespace pugi;
 
 /* This class is a subject and an observer, so it handles the updates and the notifications that come
 from the classes Selector, Router and Generator.  
@@ -46,7 +44,6 @@ public:
         stage++;
         for (Observer* observer : observers) {
             if (observer->getProcessId() == stage) {
-                cout << observer->getProcessId() << endl;
                 observer->update(pPathCollection, pCoordinates, pCanvasSize);
                 break;
             }

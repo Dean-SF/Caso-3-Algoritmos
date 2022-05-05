@@ -1,11 +1,9 @@
 #ifndef GENERATOR_H
 #define GENERATOR_H
 
-
 #include <queue>
 #include <thread>
 #include <string>
-#include "vector"
 #include "Point.h"
 #include <fstream>
 #include <sstream>
@@ -14,20 +12,17 @@
 #include <sys/stat.h>
 #include "TypeOfRoute.h"
 #include "ObserverPattern.h"
-#include "../libraries/pugixml/pugixml.hpp"
 
 using std::cout;
 using std::endl;
 using std::queue;
 using std::thread;
 using std::string;
-using std::vector;
 using std::ofstream;
 using std::to_string;
 using pugi::xml_node;
 using std::stringstream;
 using pugi::xml_document;
-using pugi::xml_node_iterator;
 
 
 /* Generator Process - Backtracking
@@ -201,11 +196,7 @@ public:
     }
 
     ~Generator() {
-        delete canvasSize;
-        delete docPointer;
-        delete maskCoordinates;
         delete pathCollection;
-        delete originalCoordinates;
     }
 
     int getProcessId() {
@@ -213,16 +204,18 @@ public:
     }
 
     void work() {
-        cout << "Working..." << endl;
         thread consumerThread(&Generator::consumer,this);
         backtrackerProducer(0,0);
         keepRepetingConsumer = false;
         consumerThread.join();
+        cout << "Generation process finished" << endl;
+        cout << "--------------------------" << endl;
         cout << "Animation complete" << endl;
+        cout << "--------------------------" << endl;
     }
 
     void update(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
-        cout << "Generator started working" << endl;
+        cout << "Generation process started" << endl;
         canvasSize = pCanvasSize;
         pathCollection = pPathCollection;
         maskCoordinates = (vector<Point*>*) pCoordinates;

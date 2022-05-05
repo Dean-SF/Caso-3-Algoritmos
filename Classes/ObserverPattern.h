@@ -1,8 +1,8 @@
 #ifndef OBSERVERPATTERN_H
 #define OBSERVERPATTERN_H
 
-#include "Resolution.h"
 #include <vector>
+#include "Resolution.h"
 #include "../libraries/pugixml/pugixml.hpp"
 
 using std::vector;

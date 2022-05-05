@@ -3,9 +3,8 @@
 
 #include <tgmath.h>
 
-using std::sqrt;
 using std::pow;
-
+using std::sqrt;
 
 /*
 This clase is made to store "x" and "y" coordinates
@@ -22,7 +21,7 @@ public:
         horizontalAxis = 0;
     }
 
-    Point(double pVerticalAxis, double pHorizontalAxis) {
+    Point(double pHorizontalAxis,double pVerticalAxis) {
         verticalAxis = pVerticalAxis;
         horizontalAxis = pHorizontalAxis;
     }

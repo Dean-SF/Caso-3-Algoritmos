@@ -3,15 +3,10 @@
 
 #include <regex>
 #include <string>
-#include <vector>
-#include <sstream>
-#include <iostream>
 #include "Point.h"
-#include <algorithm>
-#include "Resolution.h"
+#include <iostream>
 #include <unordered_set>
 #include "observerPattern.h"
-#include "../libraries/pugixml/pugixml.hpp"
 
 using std::cout;
 using std::endl;
@@ -20,14 +15,9 @@ using std::find;
 using std::regex;
 using std::smatch;
 using std::string;
-using std::vector;
 using pugi::xml_node;
-using std::to_string;
-using std::stringstream;
 using pugi::xml_document;
 using std::unordered_set;
-using pugi::xml_object_range;
-using pugi::xml_parse_result;
 using pugi::xml_node_iterator;
 
 /* Selector process - Greedy Algorithm
@@ -43,8 +33,8 @@ Global optimum: Vector of paths close to the given coordinates
 */
 class Selector : public Subject, public Observer {
 private:
-    Observer* animator;
     int processId;
+    Observer* animator;
     xml_document *svgFile;
     double coordinateOffset;
     Point maxProximityCoords;
@@ -193,8 +183,7 @@ public:
         }
     }
 
-    void work() {  
-        cout << "Selector is working..." << endl;
+    void work() {
         coordinateOffset = (canvasSize.getWidth() + canvasSize.getHeight())/40;
         setResolution();
         selection();
@@ -202,11 +191,13 @@ public:
     }
 
     void notify(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
-        cout << "Selector is done" << endl;
+        cout << "Selection process finished" << endl;
         animator->update(pPathCollection,pCoordinates,pCanvasSize);
     }
 
     void update(vector<xml_node> *pPathCollection, void *pCoordinates, Resolution *pCanvasSize) {
+        cout << "--------------------------" << endl;
+        cout << "Selection process started" << endl;
         coordinates = (vector<Point>*) pCoordinates;
         work();
     }

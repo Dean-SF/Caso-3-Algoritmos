@@ -4,9 +4,8 @@
 #include <sstream>
 #include <string>
 
-using std::stringstream;
 using std::string;
-
+using std::stringstream;
 
 /*
 This class is in charge of managing the SVG resolution

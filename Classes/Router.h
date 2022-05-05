@@ -2,26 +2,16 @@
 #define ROUTER_H
 #define _USE_MATH_DEFINES
 
-#include <list>
 #include <cmath>
-#include <string>
 #include <vector>
-#include <sstream>
-#include <fstream>
-#include <iostream>
 #include "Point.h"
-#include "Resolution.h"
+#include <iostream>
 #include "TypeOfRoute.h"
 #include "ObserverPattern.h"
 
+using std::tan;
 using std::cout;
 using std::endl;
-using std::list;
-using std::stoi;
-using std::string;
-using std::vector;
-using namespace pugi;
-using std::stringstream;
 
 /* Routing process - Dynamic Programming
 N: Coordinates given by the user.
@@ -33,18 +23,16 @@ Global optimum: Vector of points where the mask is going to move.
 
 class Router : public Subject, public Observer {
 private:
+    int quadrant; 
+    double angle;
+    int processId;
+    double frames;
     Observer* animator;
+    Resolution *canvasSize; 
     TypeOfRoute typeOfRoute;
     vector<Point*> distances; 
     vector<Point> coordinates;
     vector<xml_node> *pathCollection;
-
-    int processId;
-    
-    Resolution *canvasSize; 
-    double angle;
-    double frames;
-    int quadrant; 
 
     /* This is where the routing process begins. It calculates the given angle's quadrant and the referential angle.
     Lastly, it calls the function that calculates the route. 
@@ -320,14 +308,27 @@ private:
     */
 
 public:
-    Router(double pAngle, int pFrames, TypeOfRoute pTypeOfRoute) {
+    Router() {
+        angle = 0; 
+        frames = 0;
+        quadrant = 1;
+        processId = 1; 
         animator = nullptr;
+        canvasSize = nullptr;
+        pathCollection = nullptr;
+        typeOfRoute = straightRoute;
+    }
+
+    Router(TypeOfRoute pTypeOfRoute, double pAngle, int pFrames) {
+        quadrant = 1;
         processId = 1;
         angle = pAngle;
         frames = pFrames;
+        animator = nullptr;
+        canvasSize = nullptr;
+        pathCollection = nullptr;
         typeOfRoute = pTypeOfRoute;
     }
-    ~Router() {} 
 
     int getWidth() {
         return canvasSize->getWidth();

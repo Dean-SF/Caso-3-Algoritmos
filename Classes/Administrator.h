@@ -1,22 +1,17 @@
 #ifndef ADMINISTRATOR_H
 #define ADMINISTRATOR_H
 
+#include <string>
+#include <random>
+#include <time.h>
 #include "Point.h"
 #include "Router.h"
 #include "Animator.h"
 #include "Selector.h"
 #include "Generator.h"
 #include "TypeOfRoute.h"
-#include <string>
-#include <random>
-#include <time.h>
-#include <iostream>
-#include "../libraries/pugixml/pugixml.hpp"
 
-using namespace pugi;
 using std::rand;
-using std::cout;
-using std::endl;
 
 // This class handles the initialization of the Animator, Selector, Router and Generator 
 class Administrator {
@@ -30,7 +25,7 @@ private:
 
     // Choose a type of route randomly, generate random number from 0 to 1 -> 0 = straight, 1 = curved
     TypeOfRoute chooseRandomTypeOfRoute() {
-        srand (time(0));
+        srand(time(0));
         int chooseRandomRoute = rand() % 2;
         TypeOfRoute typeOfRoute;
         if (chooseRandomRoute == 0) 
@@ -50,7 +45,7 @@ public:
         TypeOfRoute typeOfRoute = chooseRandomTypeOfRoute();
 
         selector = new Selector(pColors,docPointer);
-        router = new Router(pAngle, pFrames, typeOfRoute);
+        router = new Router(typeOfRoute, pAngle, pFrames);
         generator = new Generator(typeOfRoute, pFrames, fileName, docPointer, &points);
         animator = new Animator();
         
